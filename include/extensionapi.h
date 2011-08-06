@@ -66,6 +66,17 @@ extern "C"
  */
 AXF_API int OnExtend(const struct _PluginInterface *, const struct _ExtenderInterface *);
 
+/************************************************************************/
+/* Data Types                                                           */
+/************************************************************************/
+typedef WsExtension (*ExtensionFactoryCreate)();
+typedef void (*ExtensionFactoryDestroy)(WsExtension);
+
+typedef struct _ExtensionFactory
+{
+    ExtensionFactoryCreate Create;
+    ExtensionFactoryDestroy Destroy;
+} ExtensionFactory;
 
 /************************************************************************/
 /* Extender Interface                                                   */
@@ -78,7 +89,7 @@ typedef struct _EventExtenderInterface
 
 typedef struct _ExtensionExtenderInterface
 {
-    void (*AddExtension)(const char *name, const struct _ExtensionFactory *fac);
+    void (*AddExtension)(const char *name, const ExtensionFactory *fac);
 }ExtensionExtenderInterface;
 
 typedef struct _ExtenderInterface
@@ -168,7 +179,7 @@ public:
     ExtensionExtenderInterfaceEx(const ExtenderInterface *pi) : ExtenderEx(pi) {}
     virtual ~ExtensionExtenderInterfaceEx(){}
 
-    void AddExtension(const char *name, const struct _ExtensionFactory *fac)
+    void AddExtension(const char *name, const ExtensionFactory *fac)
     {
         GetExtenderInterface().extension->AddExtension(name, fac);
     }
