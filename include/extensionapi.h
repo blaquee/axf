@@ -115,13 +115,13 @@ public:
     ExtenderEx(const ExtenderInterface *pi) : pi(pi) {}
     virtual ~ExtenderEx() {}
 
-    const ExtenderInterface &GetPluginInterface() const 
+    const ExtenderInterface &GetExtenderInterface() const 
     { 
         ThrowIfNotInitialized();
 
         return *pi; 
     }
-    const ExtenderInterface *GetPluginInterfacePtr() const 
+    const ExtenderInterface *GetExtenderInterfacePtr() const 
     { 
         ThrowIfNotInitialized();
 
@@ -155,7 +155,10 @@ public:
     EventExtenderInterfaceEx(const ExtenderInterface *pi) : ExtenderEx(pi) {}
     virtual ~EventExtenderInterfaceEx(){}
 
-
+    void AddEvent(const char *name)
+    {
+        GetExtenderInterface().event->AddEvent(name);
+    }
 };
 
 class ExtensionExtenderInterfaceEx : public virtual ExtenderEx
@@ -165,7 +168,10 @@ public:
     ExtensionExtenderInterfaceEx(const ExtenderInterface *pi) : ExtenderEx(pi) {}
     virtual ~ExtensionExtenderInterfaceEx(){}
 
-
+    void AddExtension(const char *name, const struct _ExtensionFactory *fac)
+    {
+        GetExtenderInterface().extension->AddExtension(name, fac);
+    }
 };
 
 class ExtenderInterfaceEx : public virtual InterfaceEx,

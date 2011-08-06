@@ -82,6 +82,11 @@ WsBool LoadPlugin_Plugin(const char* fileName)
         PluginManager::inst().LoadPlugin(fileName);
         return WSTRUE;
     }
+    catch(const std::exception &ex)
+    {
+        std::cerr << ex.what() << std::endl;
+        return WSFALSE;
+    }
     catch(...)
     {
 	    return WSFALSE;
@@ -95,6 +100,11 @@ WsBool UnloadPlugin_Plugin(const char *fileName)
         PluginManager::inst().UnloadPlugin(fileName);
         return WSTRUE;
     }
+    catch(const std::exception &ex)
+    {
+        std::cerr << ex.what() << std::endl;
+        return WSFALSE;
+    }
     catch(...)
     {
         return WSFALSE;
@@ -107,6 +117,11 @@ WsBool ReloadPlugin_Plugin(const char *fileName)
     {
         PluginManager::inst().ReloadPlugin(fileName);
         return WSTRUE;
+    }
+    catch(const std::exception &ex)
+    {
+        std::cerr << ex.what() << std::endl;
+        return WSFALSE;
     }
     catch(...)
     {
