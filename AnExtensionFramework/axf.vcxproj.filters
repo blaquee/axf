@@ -1,0 +1,181 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="easyhook">
+      <UniqueIdentifier>{6096bd6a-0991-4a02-8cc9-79672bda8fd2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="wsplugin">
+      <UniqueIdentifier>{f61da969-70eb-4139-bf27-90a347fe4e35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="json">
+      <UniqueIdentifier>{006767ac-8659-4215-88f3-76d40dc6c2ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="extensionman">
+      <UniqueIdentifier>{4367cf06-5cf5-4282-97ac-5a0274f117b1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="easyhook\Rtl\error.c">
+      <Filter>easyhook</Filter>
+    </ClCompile>
+    <ClCompile Include="easyhook\Rtl\file.c">
+      <Filter>easyhook</Filter>
+    </ClCompile>
+    <ClCompile Include="easyhook\Rtl\memory.c">
+      <Filter>easyhook</Filter>
+    </ClCompile>
+    <ClCompile Include="easyhook\Rtl\string.c">
+      <Filter>easyhook</Filter>
+    </ClCompile>
+    <ClCompile Include="easyhook\RemoteHook\driver.cpp">
+      <Filter>easyhook</Filter>
+    </ClCompile>
+    <ClCompile Include="easyhook\RemoteHook\entry.cpp">
+      <Filter>easyhook</Filter>
+    </ClCompile>
+    <ClCompile Include="easyhook\RemoteHook\service.c">
+      <Filter>easyhook</Filter>
+    </ClCompile>
+    <ClCompile Include="easyhook\RemoteHook\stealth.c">
+      <Filter>easyhook</Filter>
+    </ClCompile>
+    <ClCompile Include="easyhook\RemoteHook\thread.c">
+      <Filter>easyhook</Filter>
+    </ClCompile>
+    <ClCompile Include="easyhook\LocalHook\acl.c">
+      <Filter>easyhook</Filter>
+    </ClCompile>
+    <ClCompile Include="easyhook\LocalHook\alloc.c">
+      <Filter>easyhook</Filter>
+    </ClCompile>
+    <ClCompile Include="easyhook\LocalHook\barrier.c">
+      <Filter>easyhook</Filter>
+    </ClCompile>
+    <ClCompile Include="easyhook\LocalHook\caller.c">
+      <Filter>easyhook</Filter>
+    </ClCompile>
+    <ClCompile Include="easyhook\LocalHook\debug.cpp">
+      <Filter>easyhook</Filter>
+    </ClCompile>
+    <ClCompile Include="easyhook\LocalHook\install.c">
+      <Filter>easyhook</Filter>
+    </ClCompile>
+    <ClCompile Include="easyhook\LocalHook\reloc.c">
+      <Filter>easyhook</Filter>
+    </ClCompile>
+    <ClCompile Include="easyhook\LocalHook\uninstall.c">
+      <Filter>easyhook</Filter>
+    </ClCompile>
+    <ClCompile Include="hookah.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="wsplugin\wsexception.cpp">
+      <Filter>wsplugin</Filter>
+    </ClCompile>
+    <ClCompile Include="wsplugin\wsplugin_c.cpp">
+      <Filter>wsplugin</Filter>
+    </ClCompile>
+    <ClCompile Include="wsplugin\wspluginmanager.cpp">
+      <Filter>wsplugin</Filter>
+    </ClCompile>
+    <ClCompile Include="wsplugin\wsplugin.cpp">
+      <Filter>wsplugin</Filter>
+    </ClCompile>
+    <ClCompile Include="singleton.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="extensionman\extensionplugin_c.cpp">
+      <Filter>extensionman</Filter>
+    </ClCompile>
+    <ClCompile Include="extensionman\extension.cpp">
+      <Filter>extensionman</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="easyhook\ASM\ILD_x86.asm">
+      <Filter>easyhook</Filter>
+    </CustomBuild>
+    <CustomBuild Include="easyhook\ASM\HookSpecific_x86.asm">
+      <Filter>easyhook</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hookah.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hookah_nt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="wsplugin\wsexception.h">
+      <Filter>wsplugin</Filter>
+    </ClInclude>
+    <ClInclude Include="wsplugin\wsplugin.h">
+      <Filter>wsplugin</Filter>
+    </ClInclude>
+    <ClInclude Include="wsplugin\wspluginmanager.h">
+      <Filter>wsplugin</Filter>
+    </ClInclude>
+    <ClInclude Include="wsplugin\wsversion.h">
+      <Filter>wsplugin</Filter>
+    </ClInclude>
+    <ClInclude Include="wsplugin\wsthread.h">
+      <Filter>wsplugin</Filter>
+    </ClInclude>
+    <ClInclude Include="wsplugin\wslog.h">
+      <Filter>wsplugin</Filter>
+    </ClInclude>
+    <ClInclude Include="regkey.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="singleton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="json\elements.h">
+      <Filter>json</Filter>
+    </ClInclude>
+    <ClInclude Include="json\reader.h">
+      <Filter>json</Filter>
+    </ClInclude>
+    <ClInclude Include="json\visitor.h">
+      <Filter>json</Filter>
+    </ClInclude>
+    <ClInclude Include="json\writer.h">
+      <Filter>json</Filter>
+    </ClInclude>
+    <ClInclude Include="extensionman\extensionplugin_c.h">
+      <Filter>extensionman</Filter>
+    </ClInclude>
+    <ClInclude Include="extensionman\extension.h">
+      <Filter>extensionman</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="json\elements.inl">
+      <Filter>json</Filter>
+    </None>
+    <None Include="json\reader.inl">
+      <Filter>json</Filter>
+    </None>
+    <None Include="json\writer.inl">
+      <Filter>json</Filter>
+    </None>
+  </ItemGroup>
+</Project>

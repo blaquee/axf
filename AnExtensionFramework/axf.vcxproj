@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{82950C53-F1AE-4F45-A50F-EF16F7888A6F}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>enigmatool</RootNamespace>
+    <ProjectName>AnExtensionFramework</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;ENIGMATOOL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;ENIGMATOOL_EXPORTS;PSAPI_VERSION=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>easyhook;$(SolutionDir)include</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>Psapi.lib;DbgHelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="easyhook\LocalHook\acl.c" />
+    <ClCompile Include="easyhook\LocalHook\alloc.c" />
+    <ClCompile Include="easyhook\LocalHook\barrier.c" />
+    <ClCompile Include="easyhook\LocalHook\caller.c" />
+    <ClCompile Include="easyhook\LocalHook\debug.cpp" />
+    <ClCompile Include="easyhook\LocalHook\install.c" />
+    <ClCompile Include="easyhook\LocalHook\reloc.c" />
+    <ClCompile Include="easyhook\LocalHook\uninstall.c" />
+    <ClCompile Include="easyhook\RemoteHook\driver.cpp" />
+    <ClCompile Include="easyhook\RemoteHook\entry.cpp" />
+    <ClCompile Include="easyhook\RemoteHook\service.c" />
+    <ClCompile Include="easyhook\RemoteHook\stealth.c" />
+    <ClCompile Include="easyhook\RemoteHook\thread.c" />
+    <ClCompile Include="easyhook\Rtl\error.c" />
+    <ClCompile Include="easyhook\Rtl\file.c" />
+    <ClCompile Include="easyhook\Rtl\memory.c" />
+    <ClCompile Include="easyhook\Rtl\string.c" />
+    <ClCompile Include="extensionman\extension.cpp" />
+    <ClCompile Include="extensionman\extensionplugin_c.cpp" />
+    <ClCompile Include="hookah.cpp" />
+    <ClCompile Include="singleton.cpp" />
+    <ClCompile Include="wsplugin\wsexception.cpp" />
+    <ClCompile Include="wsplugin\wsplugin.cpp" />
+    <ClCompile Include="wsplugin\wspluginmanager.cpp" />
+    <ClCompile Include="wsplugin\wsplugin_c.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="easyhook\ASM\HookSpecific_x86.asm">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd "$(IntDir)" 
+ml.exe /D_WIN32 /c /Cx "%(FullPath)"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="easyhook\ASM\ILD_x86.asm">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd "$(IntDir)" 
+ml.exe /D_WIN32 /c /Cx "%(FullPath)"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename).obj</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="extensionman\extension.h" />
+    <ClInclude Include="extensionman\extensionplugin_c.h" />
+    <ClInclude Include="hookah.h" />
+    <ClInclude Include="hookah_nt.h" />
+    <ClInclude Include="json\elements.h" />
+    <ClInclude Include="json\reader.h" />
+    <ClInclude Include="json\visitor.h" />
+    <ClInclude Include="json\writer.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="regkey.h" />
+    <ClInclude Include="singleton.h" />
+    <ClInclude Include="wsplugin\wsexception.h" />
+    <ClInclude Include="wsplugin\wslog.h" />
+    <ClInclude Include="wsplugin\wsplugin.h" />
+    <ClInclude Include="wsplugin\wspluginmanager.h" />
+    <ClInclude Include="wsplugin\wsthread.h" />
+    <ClInclude Include="wsplugin\wsversion.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="json\elements.inl" />
+    <None Include="json\reader.inl" />
+    <None Include="json\writer.inl" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
