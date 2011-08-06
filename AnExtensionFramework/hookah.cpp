@@ -231,7 +231,7 @@ DWORD WINAPI StartThread( LPVOID thread )
     WaitForSingleObject((HANDLE)thread, 3000);
     CloseHandle((HANDLE)thread);
 
-    Sleep(500);
+    //Sleep(500);
 
     SuspendResumeOtherThreads(true);
     LoadNTDLLFunctions();
