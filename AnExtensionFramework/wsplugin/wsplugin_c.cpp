@@ -50,7 +50,7 @@ void DllPlugin::Unload()
 {
     set<EventFunctionData*> &eventData = GetPluginInterface().data->registerEvents[ON_UNLOAD_EVENT];
 
-    if(eventData.size() <= 0)
+    if(eventData.empty())
     {
         throw WSException("this dll has not exported OnUnload");
     }

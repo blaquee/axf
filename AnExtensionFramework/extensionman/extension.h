@@ -21,12 +21,13 @@ public:
 
 class ExtenderInterfaceData
 {
-    
+    int unused;
 };
 
 struct EventExtenderInterface
 {
     void (*AddEvent)(const char *name);
+    void (*FireEvent)(const char *name, void *data);
 };
 
 struct ExtensionExtenderInterface

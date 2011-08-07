@@ -85,6 +85,7 @@ typedef struct _ExtensionFactory
 typedef struct _EventExtenderInterface
 {
     void (*AddEvent)(const char *name);
+    void (*FireEvent)(const char *name, void *data);
 }EventExtenderInterface;
 
 typedef struct _ExtensionExtenderInterface
@@ -169,6 +170,10 @@ public:
     void AddEvent(const char *name)
     {
         GetExtenderInterface().event->AddEvent(name);
+    }
+    void FireEvent(const char *name, void *data)
+    {
+        GetExtenderInterface().event->FireEvent(name, data);
     }
 };
 
