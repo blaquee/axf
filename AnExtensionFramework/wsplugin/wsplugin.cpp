@@ -7,6 +7,9 @@
 #include "wsthread.h"
 #include "wslog.h"
 #include <iterator>
+#include <limits>
+
+#undef max
 
 using namespace std;
 
@@ -424,12 +427,82 @@ ProtectionMode VirtualProtect_Plugin(void *address, size_t size, ProtectionMode 
         return PROTECTION_MODE_NOACCESS;
 }
 
+inline bool HexCharToInt(int &c1, char b1)
+{
+    bool isok = false;
+
+    if(b1 >= '0' && b1 <= '9')
+    {
+        c1 = (b1 - '0'); isok = true;
+    }
+    else if(b1 >= 'A' && b1 <= 'F')
+    {
+        c1 = (b1 - 'A')+10; isok = true;
+    }
+    else if(b1 >= 'a' && b1 <= 'f')
+    {
+        c1 = (b1 - 'a')+10; isok = true;
+    }
+
+    return isok;
+}
+
+inline bool MakeSigFromStr(std::vector<unsigned char> &sigBuf, const std::string &sigStr)
+{
+    sigBuf.resize(sigStr.length());
+
+    std::vector<unsigned char>::iterator sigDataIt = sigBuf.begin();
+    std::vector<unsigned char>::iterator sigMaskIt = sigBuf.begin() + sigBuf.size()/2;
+
+    for(std::string::const_iterator it = sigStr.begin(); it != sigStr.end(); std::advance(it, 2), ++sigDataIt, ++sigMaskIt)
+    {
+        char b1 = *it;
+        char b2 = *(it+1);
+
+        if(b1 == '?' && b2 == '?')
+        {
+            *sigDataIt = '?';
+            *sigMaskIt = '?';
+        }
+        else
+        {
+            int c1, c2;
+
+            bool firstok =  HexCharToInt(c1, b1);
+            bool secondok = HexCharToInt(c2, b2);
+
+            if(firstok && secondok)
+            {
+                int num = c1*16 + c2;
+                if(num > std::numeric_limits<unsigned char>::max())
+                {
+                    return false; // too high
+                }
+                else
+                {
+                    *sigDataIt = (unsigned char)num;
+                    *sigMaskIt = 'X';
+                }
+            }
+            else
+                return false; //malformed sig
+        }
+    }
+
+    return true;
+}
+
 void * FindSignature_Plugin(const AllocationInfo *allocInfo, const char *sig)
 {
     // eat up whitespaces
     std::string sigStr = clean(std::string(sig), std::string(" \r\n\t"));
     if((sigStr.length() % 2) == 1) 
         return 0; // the sig length is not an even number
+
+    std::vector<unsigned char> sigBuf;
+    if(MakeSigFromStr(sigBuf, sigStr) == false)
+        return 0;
+
 
     unsigned char *endPtr = ((unsigned char*)allocInfo->base)+allocInfo->size;
     for(unsigned char *curPtr = (unsigned char*)allocInfo->base; curPtr < endPtr; curPtr++) 
@@ -438,60 +511,19 @@ void * FindSignature_Plugin(const AllocationInfo *allocInfo, const char *sig)
             continue;
 
         unsigned char *innerPtr = curPtr;
-        std::string::iterator it;
-        for(it = sigStr.begin(); it != sigStr.end(); std::advance(it, 2),innerPtr++)
+        
+        std::vector<unsigned char>::const_iterator sigDataIt = sigBuf.begin();
+        std::vector<unsigned char>::iterator sigMaskIt = sigBuf.begin() + sigBuf.size()/2;
+
+        for (;(sigMaskIt!=sigBuf.end()) && (innerPtr!=endPtr);++sigDataIt,++sigMaskIt,innerPtr++)
         {
-            char b1 = *it;
-            char b2 = *(it+1);
-
-            if(b1 == '?' && b2 == '?')
+            if(!((*sigMaskIt=='?') || (*sigMaskIt=='X' && *sigDataIt==*innerPtr)))
             {
-                continue;
-            }
-            else
-            {
-                int c1, c2;
-
-                bool firstok =  false;
-                bool secondok = false;
-
-                if(b1 >= '0' && b1 <= '9')
-                {
-                    c1 = (b1 - '0'); firstok = true;
-                }
-                else if(b1 >= 'A' && b1 <= 'F')
-                {
-                    c1 = (b1 - 'A')+10; firstok = true;
-                }
-                else if(b1 >= 'a' && b1 <= 'f')
-                {
-                    c1 = (b1 - 'a')+10; firstok = true;
-                }
-
-                if(b2 >= '0' && b2 <= '9')
-                {
-                    c2 = (b2 - '0'); secondok = true;
-                }
-                else if(b2 >= 'A' && b2 <= 'F')
-                {
-                    c2 = (b2 - 'A')+10; secondok = true;
-                }
-                else if(b2 >= 'a' && b2 <= 'f')
-                {
-                    c2 = (b2 - 'a')+10; secondok = true;
-                }
-
-                if(firstok && secondok)
-                {
-                    int num = c1*16 + c2;
-                    if(num != *innerPtr)
-                        break;
-                }
-                else
-                    return 0; //malformed sig
+                break;
             }
         }
-        if(std::distance(sigStr.begin(), it) == sigStr.length())
+
+        if(std::distance(sigBuf.begin(), sigMaskIt) == sigBuf.size())
         {
             // sig found
             return curPtr;
