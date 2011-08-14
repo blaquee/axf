@@ -400,18 +400,19 @@ WsBool GetAllocationBase_Plugin(AllocationInfo *allocInfo, void *addr)
     if(!VirtualQuery(addr, &mem, sizeof(mem)))
         return WSFALSE;
 
-    allocInfo->base = mem.AllocationBase;
-
     IMAGE_DOS_HEADER *dos = (IMAGE_DOS_HEADER*)mem.AllocationBase;
     UINT_PTR cdos = (UINT_PTR)dos;
     IMAGE_NT_HEADERS *pe = (IMAGE_NT_HEADERS*)(cdos + dos->e_lfanew);
 
     if(pe->Signature == IMAGE_NT_SIGNATURE) 
     {
-        allocInfo->size = pe->OptionalHeader.SizeOfImage;
+        UINT_PTR moduleBase = (UINT_PTR)mem.AllocationBase;
+        allocInfo->base = (void*)(moduleBase + pe->OptionalHeader.BaseOfCode);
+        allocInfo->size = pe->OptionalHeader.SizeOfCode;
     }
     else
     {
+        allocInfo->base = mem.AllocationBase;
         allocInfo->size = mem.RegionSize;
     }
 
@@ -507,9 +508,6 @@ void * FindSignature_Plugin(const AllocationInfo *allocInfo, const char *sig)
     unsigned char *endPtr = ((unsigned char*)allocInfo->base)+allocInfo->size;
     for(unsigned char *curPtr = (unsigned char*)allocInfo->base; curPtr < endPtr; curPtr++) 
     {
-        if(IsBadReadPtr(curPtr, 1))
-            continue;
-
         unsigned char *innerPtr = curPtr;
         
         std::vector<unsigned char>::const_iterator sigDataIt = sigBuf.begin();
