@@ -42,6 +42,7 @@ static void InitPluginManager(PluginManager &pm)
 
     std::cout << "BaseDir: "<< appDir << std::endl;
     std::cout << "PluginDir: "<< pluginDir << std::endl;
+    std::cout << "ExtensionDir: "<< extDir << std::endl;
 }
 
 PluginManager::PluginManager()
