@@ -17,14 +17,14 @@ inline int MemoryCopy(void* target, void* src, unsigned int size)
     return size;
 }
 
-static int WriteMemory(void* target, void* src, unsigned int size)
+static int WriteMemory(void* target, const void* src, unsigned int size)
 {
-    return MemoryCopy(target, src, size);
+    return MemoryCopy(target, (void*)src, size);
 }
 
-static int ReadMemory(void* target, void* src, unsigned int size)
+static int ReadMemory(const void* target, void* src, unsigned int size)
 {
-    return MemoryCopy(src, target, size);
+    return MemoryCopy(src, (void*)target, size);
 }
 
 namespace MemoryInterfaceFactory1

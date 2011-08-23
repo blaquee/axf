@@ -12,7 +12,7 @@ typedef struct _MemoryInterface1
      
      returns the amount of data written, or -1 if it failed
     */
-    int (*Write)(void*, void*, unsigned int);
+    int (*Write)(void*, const void*, unsigned int);
 
     /*
      param 1 = target address
@@ -21,7 +21,7 @@ typedef struct _MemoryInterface1
      
      returns the amount of data read, or -1 if it failed
     */
-    int (*Read)(void*, void*, unsigned int);
+    int (*Read)(const void*, void*, unsigned int);
 } MemoryInterface1;
 
 #ifdef __cplusplus
@@ -34,13 +34,30 @@ public:
     MemoryInterfaceEx1(MemoryInterface1 *ext) : ext(ext)
     {
     }
-    int Write(void *target, void *src, unsigned int size)
+    operator WsExtension()
+    {
+        return (WsExtension)ext;
+    }
+    int Write(void *target, const void *src, unsigned int size) const
     {
         return ext->Write(target, src, size);
     }
-    int Read(void *target, void *src, unsigned int size)
+    int Read(const void *target, void *src, unsigned int size) const
     {
         return ext->Read(target, src, size);
+    }
+
+    // templated version
+    template<typename T>
+    int Write(T *target, const T *src) const
+    {
+        return ext->Write(target, src, sizeof(T));
+    }
+
+    template<typename T>
+    int Read(const T *target, T *src) const
+    {
+        return ext->Read(target, src, sizeof(T));
     }
 };
 #endif

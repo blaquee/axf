@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wingui", "wingui\wingui.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "memoryext", "memoryext\memoryext.vcxproj", "{FBAB8157-B2A9-4AA6-8E6C-C9A52CB0E565}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "trainer_example", "trainer_example\trainer_example.vcxproj", "{C6C0C008-7DAF-4D53-ADC1-1E67B7E853C6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -43,6 +45,12 @@ Global
 		{FBAB8157-B2A9-4AA6-8E6C-C9A52CB0E565}.Release|Win32.ActiveCfg = Release|Win32
 		{FBAB8157-B2A9-4AA6-8E6C-C9A52CB0E565}.Release|Win32.Build.0 = Release|Win32
 		{FBAB8157-B2A9-4AA6-8E6C-C9A52CB0E565}.Release|x64.ActiveCfg = Release|Win32
+		{C6C0C008-7DAF-4D53-ADC1-1E67B7E853C6}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C6C0C008-7DAF-4D53-ADC1-1E67B7E853C6}.Debug|Win32.Build.0 = Debug|Win32
+		{C6C0C008-7DAF-4D53-ADC1-1E67B7E853C6}.Debug|x64.ActiveCfg = Debug|Win32
+		{C6C0C008-7DAF-4D53-ADC1-1E67B7E853C6}.Release|Win32.ActiveCfg = Release|Win32
+		{C6C0C008-7DAF-4D53-ADC1-1E67B7E853C6}.Release|Win32.Build.0 = Release|Win32
+		{C6C0C008-7DAF-4D53-ADC1-1E67B7E853C6}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
