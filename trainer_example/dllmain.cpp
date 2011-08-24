@@ -34,7 +34,7 @@ AXF_API int OnLoad(const struct _PluginInterface *p)
     if(mem.Read(&HEALTH, &originalHealth) > 0)
     {
         std::stringstream ss; ss << "Original Health is: " << originalHealth << std::endl;
-        pi.Log(ss.str().c_str());
+        pi.Log(ss.str());
     }
     else
     {
@@ -44,7 +44,7 @@ AXF_API int OnLoad(const struct _PluginInterface *p)
     if(mem.Write(&HEALTH, &newHealth) > 0)
     {
         std::stringstream ss; ss << "Modified Health is: " << HEALTH << std::endl;
-        pi.Log(ss.str().c_str());
+        pi.Log(ss.str());
     }
     else
     {
