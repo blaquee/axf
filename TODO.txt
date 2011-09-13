@@ -1,6 +1,7 @@
 -------------
 HIGH Priority
 -------------
+add config file for AXF
 add ON_EXTENSION_LOADED event (to solve the load order issue for extension plugins)
 add ON_LOAD_PLUGIN event (to handle loading of unknown plugin types, AXF only knows how to load DLL plugins)
 add underC plugin loader extension (underC is a script version of C++, use ON_LOAD_PLUGIN event to receive notification)
