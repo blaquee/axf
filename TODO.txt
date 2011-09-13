@@ -1,0 +1,23 @@
+-------------
+HIGH Priority
+-------------
+add ON_EXTENSION_LOADED event (to solve the load order issue for extension plugins)
+add ON_LOAD_PLUGIN event (to handle loading of unknown plugin types, AXF only knows how to load DLL plugins)
+add underC plugin loader extension (underC is a script version of C++, use ON_LOAD_PLUGIN event to receive notification)
+add a lightweight reflection interface (for headerless access to AXF and extensions from any language)
+
+------------
+MID Priority
+------------
+add plugin auto loader with config file
+
+------------
+LOW Priority
+------------
+add an assembler extension
+add a socket hook extension (use PluginInterface.HookInterface)
+add a packet sniffer GUI plugin (use the socket hook extension to receive packet events)
+add a direct3d GUI extension (in game version of wingui, use AntTweakBar and hook d3d with PluginInterface.HookInterface)
+add a Python plugin loader extension (use ON_LOAD_PLUGIN event to receive notification)
+
+port pluginapi.h and extensionapi.h to other languages
