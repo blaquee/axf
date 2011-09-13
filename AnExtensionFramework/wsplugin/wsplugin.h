@@ -117,11 +117,11 @@ typedef struct _SystemInterface
 
 typedef struct _LoggingInterface
 {
+    LogLevel Quiet;
     LogLevel Debug;
     LogLevel Info;
     LogLevel Warn;
     LogLevel Error;
-    LogLevel Fatal;
 
     void (*SetLogLevel)(const struct _PluginInterface*, const LogLevel type);
     LogLevel (*GetLogLevel)(const struct _PluginInterface*);

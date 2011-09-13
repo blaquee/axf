@@ -268,11 +268,12 @@ typedef struct _SystemInterface
 
 typedef struct _LoggingInterface
 {
+    LogLevel Quiet;
     LogLevel Debug;
     LogLevel Info;
     LogLevel Warn;
     LogLevel Error;
-    LogLevel Fatal;
+    
 
     void (*SetLogLevel)(const struct _PluginInterface*, const LogLevel type);
     LogLevel (*GetLogLevel)(const struct _PluginInterface*);
@@ -518,6 +519,10 @@ public:
     LoggingInterfaceEx(const PluginInterface *pi) : InterfaceEx(pi){}
     virtual ~LoggingInterfaceEx(){}
 
+    LogLevel Quiet() const
+    {
+        return GetPluginInterface().log->Quiet;
+    }
     LogLevel Debug() const
     {
         return GetPluginInterface().log->Debug;
@@ -533,10 +538,6 @@ public:
     LogLevel Error() const
     {
         return GetPluginInterface().log->Error;
-    }
-    LogLevel Fatal() const
-    {
-        return GetPluginInterface().log->Fatal;
     }
 
     void SetLogLevel(const LogLevel type) const

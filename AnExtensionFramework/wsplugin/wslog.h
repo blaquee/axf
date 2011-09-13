@@ -14,11 +14,11 @@
 #undef INFO
 #undef WARN
 #undef ERROR
-#undef FATAL
+#undef QUIET
 #undef MAX
 namespace Log
 {
-    enum Level { INFO=0, DEBUG, WARN, ERROR, FATAL, MAX };
+    enum Level { QUIET=0, INFO, DEBUG, WARN, ERROR, MAX };
 }
 
 class LogHandler
@@ -114,7 +114,7 @@ public:
         loggers[Log::INFO];
         loggers[Log::WARN];
         loggers[Log::ERROR];
-        loggers[Log::FATAL];
+        loggers[Log::QUIET];
     }
     ~TLogInterface()
     {
@@ -129,7 +129,7 @@ public:
         case Log::INFO: return Log::INFO; 
         case Log::WARN: return Log::WARN; 
         case Log::ERROR: return Log::ERROR; 
-        case Log::FATAL: return Log::FATAL; 
+        case Log::QUIET: return Log::QUIET; 
         case Log::MAX: return Log::MAX; 
 
         default:
@@ -165,7 +165,7 @@ public:
         try
         {
             lv = ToLogLevel(level);
-            if(level <= (unsigned int)currentLogLevel)
+            if(level > Log::QUIET && level <= (unsigned int)currentLogLevel)
                 LogFuncSet(lv, loggers[lv], s);
         }
         catch(const WSException &)
@@ -192,7 +192,7 @@ public:
         AddLogger(Log::INFO, logger);
         AddLogger(Log::WARN, logger);
         AddLogger(Log::ERROR, logger);
-        AddLogger(Log::FATAL, logger);
+        AddLogger(Log::QUIET, logger);
     }
     void RemoveLogger(TLogger *logger)
     {

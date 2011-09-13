@@ -46,8 +46,6 @@ static void ConsoleLogOutput(LogLevel level, const char *s)
         title = "DEBUG";
     else if(level == pi.Error())
         title = "ERROR";
-    else if(level == pi.Fatal())
-        title = "FATAL";
     else if(level == pi.Warn())
         title = "WARN";
 

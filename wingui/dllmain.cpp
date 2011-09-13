@@ -18,8 +18,8 @@ inline const char *LogLevelToText(LogLevel level)
         text = "ERROR";
     else if(level == pi.Warn())
         text = "WARN";
-    else if(level == pi.Fatal())
-        text = "FATAL";
+    else if(level == pi.Quiet())
+        text = "QUIET";
     else
         text = "FATAL"; //highest
 
@@ -160,7 +160,6 @@ AXF_API int OnExtend(const struct _PluginInterface *p, const struct _ExtenderInt
     ei = e;
 
     ei.AddLogger(pi.Error(), MsgBoxLogOutput,0,0);
-    ei.AddLogger(pi.Fatal(), MsgBoxLogOutput,0,0);
     ei.AddLogger(pi.Warn(), MsgBoxLogOutput,0,0);
     
     DWORD tid;

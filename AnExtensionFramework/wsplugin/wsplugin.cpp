@@ -120,7 +120,7 @@ WsBool LoadPlugin_Plugin(const char* fileName)
     }
     catch(...)
     {
-        LogFactory::inst().GetLogInterface()->Log(Log::FATAL, std::string("Unknown error while loading ") + std::string(fileName));
+        LogFactory::inst().GetLogInterface()->Log(Log::ERROR, std::string("Unknown error while loading ") + std::string(fileName));
 	    return WSFALSE;
     }
 }
@@ -139,7 +139,7 @@ WsBool UnloadPlugin_Plugin(const char *fileName)
     }
     catch(...)
     {
-        LogFactory::inst().GetLogInterface()->Log(Log::FATAL, std::string("Unknown error while unloading ") + std::string(fileName));
+        LogFactory::inst().GetLogInterface()->Log(Log::ERROR, std::string("Unknown error while unloading ") + std::string(fileName));
         return WSFALSE;
     }
 }
@@ -158,7 +158,7 @@ WsBool ReloadPlugin_Plugin(const char *fileName)
     }
     catch(...)
     {
-        LogFactory::inst().GetLogInterface()->Log(Log::FATAL, std::string("Unknown error while reloading ") + std::string(fileName));
+        LogFactory::inst().GetLogInterface()->Log(Log::ERROR, std::string("Unknown error while reloading ") + std::string(fileName));
         return WSFALSE;
     }
 }
@@ -604,11 +604,11 @@ PluginInterfaceWrapper::PluginInterfaceWrapper()
     pluginInterface.data->moduleHandle = 0;
     pluginInterface.data->log = LogFactory::inst().GetLogInterface();
 
+    pluginInterface.log->Quiet = (WsHandle)Log::QUIET;
     pluginInterface.log->Debug = (WsHandle)Log::DEBUG;
     pluginInterface.log->Info = (WsHandle)Log::INFO;
     pluginInterface.log->Warn = (WsHandle)Log::WARN;
     pluginInterface.log->Error = (WsHandle)Log::ERROR;
-    pluginInterface.log->Fatal = (WsHandle)Log::FATAL;
     pluginInterface.log->SetLogLevel = SetLogLevel_Plugin;
     pluginInterface.log->GetLogLevel = GetLogLevel_Plugin;
     pluginInterface.log->Log = Log_Plugin;

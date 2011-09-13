@@ -234,7 +234,6 @@ public:
         GetExtenderInterface().log->AddLogger(pi.log->Info, output, formatter, filter);
         GetExtenderInterface().log->AddLogger(pi.log->Warn, output, formatter, filter);
         GetExtenderInterface().log->AddLogger(pi.log->Error, output, formatter, filter);
-        GetExtenderInterface().log->AddLogger(pi.log->Fatal, output, formatter, filter);
     }
 };
 
