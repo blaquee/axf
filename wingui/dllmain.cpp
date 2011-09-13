@@ -90,6 +90,9 @@ static INT_PTR __stdcall DialogCallback(HWND hwnd, UINT uMsg, WPARAM wparam, LPA
     case WM_COMMAND:
         switch(LOWORD(wparam))
         {
+        case IDC_ABOUTBUTTON:
+            MessageBoxA(hwnd, pi.GetAboutMessage().c_str(), "About", 0);
+            break;
         case IDC_LOADBUTTON:
             {
                 HWND hwndUnloadedList = GetDlgItem(hwnd, IDC_UNLOADEDLIST);

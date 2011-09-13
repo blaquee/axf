@@ -41,24 +41,18 @@ unsigned int GetVersion_Plugin()
 
 const char *GetAboutMessage_Plugin()
 {
-    static bool ran = false;
     static std::string s;
 
-    if(!ran)
-    {
-        std::ostringstream ss;
-        ss << "Application Extension Framework v" << AXF_MAJOR_VERSION << "." << AXF_MINOR_VERSION << "." << AXF_SERVICE_VERSION << std::endl;
-        ss << "Copyright (c) 2012 Hunter" << std::endl;
-        ss << std::endl;
-        ss << "BaseDir: "<< PluginManager::inst().GetBaseDirectory() << std::endl;
-        ss << "PluginDir: "<< PluginManager::inst().GetPluginDirectory()  << std::endl;
-        ss << "ExtensionDir: "<< PluginManager::inst().GetExtensionDirectory()  << std::endl;
-        ss << "Log Level: " << LogFactory::inst().GetLogInterface()->GetLogLevel() << std::endl; 
+    std::ostringstream ss;
+    ss << "Application Extension Framework v" << AXF_MAJOR_VERSION << "." << AXF_MINOR_VERSION << "." << AXF_SERVICE_VERSION << std::endl;
+    ss << "Copyright (c) 2012 Hunter" << std::endl;
+    ss << std::endl;
+    ss << "BaseDir: "<< PluginManager::inst().GetBaseDirectory() << std::endl;
+    ss << "PluginDir: "<< PluginManager::inst().GetPluginDirectory()  << std::endl;
+    ss << "ExtensionDir: "<< PluginManager::inst().GetExtensionDirectory()  << std::endl;
+    ss << "Log Level: " << LogFactory::inst().GetLogInterface()->GetLogLevel() << std::endl; 
 
-        s = ss.str();
-        ran = true;
-    }
-
+    s = ss.str();
     return s.c_str();
 }
 
