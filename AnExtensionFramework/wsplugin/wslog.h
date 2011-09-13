@@ -2,7 +2,6 @@
 #define wslog_h__
 
 #include <string>
-#include <iostream>
 #include <map>
 #include <set>
 #include <algorithm>
@@ -19,7 +18,7 @@
 #undef MAX
 namespace Log
 {
-    enum Level { DEBUG=0, INFO, WARN, ERROR, FATAL, MAX };
+    enum Level { INFO=0, DEBUG, WARN, ERROR, FATAL, MAX };
 }
 
 class LogHandler
@@ -27,7 +26,7 @@ class LogHandler
 public:
     LogHandler(){}
     virtual ~LogHandler(){}
-    virtual void Log(const std::string &s) = 0;
+    virtual void Log(Log::Level, const std::string &s) = 0;
 };
 
 class NullLogHandler : public LogHandler
@@ -35,36 +34,7 @@ class NullLogHandler : public LogHandler
 public:
     NullLogHandler(){}
     virtual ~NullLogHandler(){}
-    virtual void Log(const std::string &s) {}
-};
-
-class FileLogHandler : public LogHandler
-{
-    std::ostream &f;
-public:
-    virtual ~FileLogHandler(){}
-    FileLogHandler(std::ostream &f) : f(f)
-    {
-
-    }
-    virtual void Log(const std::string &s)
-    {
-        f << s << std::endl;
-    }
-};
-
-class ConsoleLogHandler : public FileLogHandler
-{
-public:
-    virtual ~ConsoleLogHandler(){}
-    ConsoleLogHandler() : FileLogHandler(std::cout) {}
-};
-
-class ConsoleErrorLogHandler : public FileLogHandler
-{
-public:
-    virtual ~ConsoleErrorLogHandler(){}
-    ConsoleErrorLogHandler() : FileLogHandler(std::cerr) {}
+    virtual void Log(Log::Level, const std::string &s) {}
 };
 
 class LogFormatter
@@ -104,7 +74,7 @@ class TLogInterface
 {
     CRITICAL_SECTION mutex;
     std::map<Log::Level, std::set<TLogger*> > loggers;
-    Log::Level logLevel; // logLevel is an index to the loggers array
+    Log::Level currentLogLevel; // current log level
 
     struct DeleteLogger
     {
@@ -120,39 +90,24 @@ class TLogInterface
 
     struct LogFunc
     {
+        const Log::Level lv;
         const std::string &s;
 
-        LogFunc(const std::string &s) : s(s){}
+        LogFunc(const Log::Level lv, const std::string &s) : lv(lv), s(s){}
 
         void operator ()(TLogger* l)
         {
-            l->Log(s);
+            l->Log(lv, s);
         }
     };
 
-    void LogFuncSet(const std::set<TLogger*> &l, const std::string &s)
+    void LogFuncSet(Log::Level lv, const std::set<TLogger*> &l, const std::string &s)
     {
-        std::for_each(l.begin(), l.end(), LogFunc(s));
-    }
-
-    Log::Level ToLogLevel(unsigned int level) const
-    {
-        switch(level)
-        {
-            case Log::DEBUG: return Log::DEBUG; 
-            case Log::INFO: return Log::INFO; 
-            case Log::WARN: return Log::WARN; 
-            case Log::ERROR: return Log::ERROR; 
-            case Log::FATAL: return Log::FATAL; 
-            case Log::MAX: return Log::MAX; 
-
-            default:
-                throw WSException("Failed to convert log level");
-        }
+        std::for_each(l.begin(), l.end(), LogFunc(lv, s));
     }
 
 public:
-    TLogInterface()
+    TLogInterface() : currentLogLevel(Log::MAX)
     {
         InitializeCriticalSection(&mutex);
         loggers[Log::DEBUG];
@@ -166,16 +121,35 @@ public:
         ClearAll();
     }
 
+    Log::Level ToLogLevel(unsigned int level) const
+    {
+        switch(level)
+        {
+        case Log::DEBUG: return Log::DEBUG; 
+        case Log::INFO: return Log::INFO; 
+        case Log::WARN: return Log::WARN; 
+        case Log::ERROR: return Log::ERROR; 
+        case Log::FATAL: return Log::FATAL; 
+        case Log::MAX: return Log::MAX; 
+
+        default:
+            throw WSException("Failed to convert log level");
+        }
+    }
+
+
     Log::Level GetLogLevel() const
     {
-        return logLevel;
+        if(currentLogLevel == Log::MAX)
+            return ToLogLevel(currentLogLevel-1);
+        return currentLogLevel;
     }
 
     void SetLogLevel(unsigned int level)
     {
         try
         {
-            logLevel = ToLogLevel(level);
+            currentLogLevel = ToLogLevel(level);
         }
         catch(const WSException &)
         {
@@ -191,7 +165,8 @@ public:
         try
         {
             lv = ToLogLevel(level);
-            LogFuncSet(loggers[lv], s);
+            if(level <= (unsigned int)currentLogLevel)
+                LogFuncSet(lv, loggers[lv], s);
         }
         catch(const WSException &)
         {
@@ -202,7 +177,7 @@ public:
     void Log(const std::string &s)
     {
 
-        Log(logLevel, s);
+        Log(Log::INFO, s);
     }
 
     void AddLogger(Log::Level level, TLogger *logger)
@@ -265,10 +240,10 @@ public:
     {
 
     }
-    void Log(const std::string &s)
+    void Log(Log::Level level, const std::string &s)
     {
-        if(filter->Filter(logInterface->GetLogLevel(), s))
-            logHandler->Log(formatter->Format(logInterface->GetLogLevel(), s));
+        if(filter->Filter(level, s))
+            logHandler->Log(level, formatter->Format(level, s));
     }
     ~Logger()
     {
@@ -284,6 +259,8 @@ typedef TLogInterface<Logger> LogInterface;
 class LogFactory : public Singleton<LogFactory>
 {
     friend class Singleton<LogFactory>;
+    
+    LogInterface log;
 
     LogFactory()
     {
@@ -291,13 +268,9 @@ class LogFactory : public Singleton<LogFactory>
     }
 
 public:
-    void SetupConsoleLog(LogInterface &logInterface)
+    LogInterface *GetLogInterface()
     {
-        logInterface.AddLogger(Log::DEBUG, new Logger(new ConsoleLogHandler));
-        logInterface.AddLogger(Log::INFO, new Logger(new ConsoleLogHandler));
-        logInterface.AddLogger(Log::WARN, new Logger(new ConsoleLogHandler));
-        logInterface.AddLogger(Log::ERROR, new Logger(new ConsoleErrorLogHandler));
-        logInterface.AddLogger(Log::FATAL, new Logger(new ConsoleErrorLogHandler));
+        return &log;
     }
 
 };

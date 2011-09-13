@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "memoryext", "memoryext\memo
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "trainer_example", "trainer_example\trainer_example.vcxproj", "{C6C0C008-7DAF-4D53-ADC1-1E67B7E853C6}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "consolelogger_ext", "consolelogger_ext\consolelogger_ext.vcxproj", "{CCA5FBA4-33F6-4B86-9417-F40022E5FAE9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -51,6 +53,12 @@ Global
 		{C6C0C008-7DAF-4D53-ADC1-1E67B7E853C6}.Release|Win32.ActiveCfg = Release|Win32
 		{C6C0C008-7DAF-4D53-ADC1-1E67B7E853C6}.Release|Win32.Build.0 = Release|Win32
 		{C6C0C008-7DAF-4D53-ADC1-1E67B7E853C6}.Release|x64.ActiveCfg = Release|Win32
+		{CCA5FBA4-33F6-4B86-9417-F40022E5FAE9}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CCA5FBA4-33F6-4B86-9417-F40022E5FAE9}.Debug|Win32.Build.0 = Debug|Win32
+		{CCA5FBA4-33F6-4B86-9417-F40022E5FAE9}.Debug|x64.ActiveCfg = Debug|Win32
+		{CCA5FBA4-33F6-4B86-9417-F40022E5FAE9}.Release|Win32.ActiveCfg = Release|Win32
+		{CCA5FBA4-33F6-4B86-9417-F40022E5FAE9}.Release|Win32.Build.0 = Release|Win32
+		{CCA5FBA4-33F6-4B86-9417-F40022E5FAE9}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -78,6 +78,27 @@ typedef struct _ExtensionFactory
     ExtensionFactoryDestroy Destroy;
 } ExtensionFactory;
 
+/*
+    Param1: Log Level
+    Param2: Input string 
+*/
+typedef void (*LogOutputFunc)(LogLevel ,const char *);
+
+/*
+    Param1: Output string
+    Param2: Input Log level
+    Param3: Input string
+*/
+typedef void (*LogFormatterFunc)(String **, LogLevel, const char *);
+
+/*
+    Param1: Input log level
+    Param2: Input string
+
+    Return: WSTRUE to accept the input string, otherwise reject it
+*/
+typedef WsBool (*LogFilterFunc)(LogLevel, const char *);
+
 /************************************************************************/
 /* Extender Interface                                                   */
 /************************************************************************/
@@ -93,12 +114,18 @@ typedef struct _ExtensionExtenderInterface
     void (*AddExtension)(const char *name, const ExtensionFactory *fac);
 }ExtensionExtenderInterface;
 
+typedef struct _LogExtenderInterface
+{
+    void (*AddLogger)(LogLevel, LogOutputFunc, LogFormatterFunc, LogFilterFunc);
+}LogExtenderInterface;
+
 typedef struct _ExtenderInterface
 {
     const void * const data;
 
     const EventExtenderInterface *const event;
     const ExtensionExtenderInterface * const extension;
+    const LogExtenderInterface * const log;
 
 } ExtenderInterface;
 
@@ -190,9 +217,31 @@ public:
     }
 };
 
+class LogExtenderInterfaceEx : public virtual ExtenderEx
+{
+public:
+    LogExtenderInterfaceEx(){}
+    LogExtenderInterfaceEx(const ExtenderInterface *pi) : ExtenderEx(pi) {}
+    virtual ~LogExtenderInterfaceEx(){}
+
+    void AddLogger(LogLevel level, LogOutputFunc output, LogFormatterFunc formatter=0, LogFilterFunc filter=0)
+    {
+        GetExtenderInterface().log->AddLogger(level, output, formatter, filter);
+    }
+    void AddLoggerAllLevel(const PluginInterface &pi, LogOutputFunc output, LogFormatterFunc formatter=0, LogFilterFunc filter=0)
+    {
+        GetExtenderInterface().log->AddLogger(pi.log->Debug, output, formatter, filter);
+        GetExtenderInterface().log->AddLogger(pi.log->Info, output, formatter, filter);
+        GetExtenderInterface().log->AddLogger(pi.log->Warn, output, formatter, filter);
+        GetExtenderInterface().log->AddLogger(pi.log->Error, output, formatter, filter);
+        GetExtenderInterface().log->AddLogger(pi.log->Fatal, output, formatter, filter);
+    }
+};
+
 class ExtenderInterfaceEx : public virtual InterfaceEx,
                           public EventExtenderInterfaceEx, 
-                          public ExtensionExtenderInterfaceEx
+                          public ExtensionExtenderInterfaceEx,
+                          public LogExtenderInterfaceEx
 {
 public:
     ExtenderInterfaceEx(){}

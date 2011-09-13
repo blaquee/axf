@@ -1,12 +1,12 @@
 #include "../pch.h"
 #include "../hookah.h"
-#include "../extensionman/extension.h"
-#include "../extensionman/extensionplugin_c.h"
 #include "wspluginmanager.h"
 #include "wsplugin.h"
 #include "wsexception.h"
 #include "wsthread.h"
 #include "regkey.h"
+#include "../extensionman/extension.h"
+#include "../extensionman/extensionplugin_c.h"
 
 
 //#include "easyhook/easyhook.h"
@@ -39,10 +39,6 @@ static void InitPluginManager(PluginManager &pm)
     pm.SetExtensionDirectory(extDir);
     pm.SetPluginDirectory(pluginDir);
     pm.SetBaseDirectory(appDir);
-
-    std::cout << "BaseDir: "<< appDir << std::endl;
-    std::cout << "PluginDir: "<< pluginDir << std::endl;
-    std::cout << "ExtensionDir: "<< extDir << std::endl;
 }
 
 PluginManager::PluginManager()

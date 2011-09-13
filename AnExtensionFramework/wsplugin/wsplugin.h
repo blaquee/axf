@@ -89,7 +89,7 @@ struct PluginInterfaceData
     std::set<EventFunctionData*> registerEventsCache;
     std::set<std::shared_ptr<HookState> > hookStateCache;
     
-    LogInterface log;
+    LogInterface *log;
     std::map<WsExtension, ExtensionFactory> extensionCache;
 
     ~PluginInterfaceData();
@@ -110,6 +110,9 @@ typedef struct _SystemInterface
 
     /* Throws an exception to the plugin manager, dataUnused must be set to NULL for now  */
     void (*RaiseException)(const char *exceptionMsg, void *dataUnused);
+
+    const char* (*GetAboutMessage)(void);
+    unsigned int (*GetVersion)(void);
 } SystemInterface;
 
 typedef struct _LoggingInterface

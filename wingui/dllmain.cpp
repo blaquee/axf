@@ -1,9 +1,51 @@
 #include <Windows.h>
+#include <CommCtrl.h>
 #include "extensionapi.h"
 #include "resource.h"
 
 static PluginInterfaceEx pi;
 static ExtenderInterfaceEx ei;
+
+inline const char *LogLevelToText(LogLevel level)
+{
+    const char *text;
+
+    if(level == pi.Info())
+        text = "INFO";
+    else if(level == pi.Debug())
+        text = "DEBUG";
+    else if(level == pi.Error())
+        text = "ERROR";
+    else if(level == pi.Warn())
+        text = "WARN";
+    else if(level == pi.Fatal())
+        text = "FATAL";
+    else
+        text = "FATAL"; //highest
+
+    return text;
+}
+
+static void UpdateLogLevel(HWND hwndDlg)
+{
+    HWND hwndLogLevelSlider = GetDlgItem(hwndDlg, IDC_LOGLEVEL);
+    SendMessageA(hwndLogLevelSlider, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)pi.GetLogLevel());
+
+    SetDlgItemTextA(hwndDlg, IDC_LOGLEVELLABEL, LogLevelToText(pi.GetLogLevel()));
+}
+static void SetLogLevel(HWND hwndDlg)
+{
+    HWND hwndLogLevelSlider = GetDlgItem(hwndDlg, IDC_LOGLEVEL);
+    LRESULT level = SendMessageA(hwndLogLevelSlider, TBM_GETPOS, 0, 0);
+
+    pi.SetLogLevel((LogLevel)level);
+}
+
+static void SetupLogLevelSlider(HWND hwndDlg)
+{
+    HWND hwndLogLevelSlider = GetDlgItem(hwndDlg, IDC_LOGLEVEL);
+    SendMessageA(hwndLogLevelSlider, TBM_SETRANGE, (WPARAM)TRUE, MAKELONG(0, 4));
+}
 
 static void UpdatePluginLists(HWND hwndDlg)
 {
@@ -24,18 +66,29 @@ static void UpdatePluginLists(HWND hwndDlg)
     }
 }
 
-static INT_PTR __stdcall DialogCallback(HWND hwnd, UINT uMsg, WPARAM lparam, LPARAM wparam)
+static INT_PTR __stdcall DialogCallback(HWND hwnd, UINT uMsg, WPARAM wparam, LPARAM lparam)
 {
     char buffer[2000];
 
     switch(uMsg)
     {
     case WM_INITDIALOG:
+        SetupLogLevelSlider(hwnd);
         UpdatePluginLists(hwnd);
+        UpdateLogLevel(hwnd);
+        UpdateLogLevel(hwnd);
         return TRUE;
 
+    case WM_HSCROLL:
+        if(lparam == (LPARAM)GetDlgItem(hwnd, IDC_LOGLEVEL))
+        {
+            SetLogLevel(hwnd);
+            UpdateLogLevel(hwnd);
+        }
+        break;
+
     case WM_COMMAND:
-        switch(lparam)
+        switch(LOWORD(wparam))
         {
         case IDC_LOADBUTTON:
             {
@@ -51,7 +104,7 @@ static INT_PTR __stdcall DialogCallback(HWND hwnd, UINT uMsg, WPARAM lparam, LPA
                         if(pi.LoadPlugin(buffer) == WSFALSE)
                         {
                             std::string err = "Can't load plugin "; err+=buffer;
-                            pi.Log(pi.Error, err.c_str());
+                            pi.Log(pi.Error(), err.c_str());
                         }
                         else
                             UpdatePluginLists(hwnd);
@@ -73,7 +126,7 @@ static INT_PTR __stdcall DialogCallback(HWND hwnd, UINT uMsg, WPARAM lparam, LPA
                         if(pi.UnloadPlugin(buffer) == WSFALSE)
                         {
                             std::string err = "Can't unload plugin "; err+=buffer;
-                            pi.Log(pi.Error, err.c_str());
+                            pi.Log(pi.Error(), err.c_str());
                         }
                         else
                             UpdatePluginLists(hwnd);
@@ -96,10 +149,19 @@ static DWORD __stdcall DialogThread(LPVOID data)
     return 0;
 }
 
+static void MsgBoxLogOutput(LogLevel level, const char *s)
+{
+    MessageBoxA(0,s,LogLevelToText(level),0);
+}
+
 AXF_API int OnExtend(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
 {
     pi = p;
     ei = e;
+
+    ei.AddLogger(pi.Error(), MsgBoxLogOutput,0,0);
+    ei.AddLogger(pi.Fatal(), MsgBoxLogOutput,0,0);
+    ei.AddLogger(pi.Warn(), MsgBoxLogOutput,0,0);
     
     DWORD tid;
     CreateThread(0,0, &DialogThread, 0, 0, &tid);

@@ -34,6 +34,34 @@ StrType clean (const StrType &oldStr, const StrType &bad)
     return str;
 }
 
+unsigned int GetVersion_Plugin()
+{
+    return AXF_VERSION;
+}
+
+const char *GetAboutMessage_Plugin()
+{
+    static bool ran = false;
+    static std::string s;
+
+    if(!ran)
+    {
+        std::ostringstream ss;
+        ss << "Application Extension Framework v" << AXF_MAJOR_VERSION << "." << AXF_MINOR_VERSION << "." << AXF_SERVICE_VERSION << std::endl;
+        ss << "Copyright (c) 2012 Hunter" << std::endl;
+        ss << std::endl;
+        ss << "BaseDir: "<< PluginManager::inst().GetBaseDirectory() << std::endl;
+        ss << "PluginDir: "<< PluginManager::inst().GetPluginDirectory()  << std::endl;
+        ss << "ExtensionDir: "<< PluginManager::inst().GetExtensionDirectory()  << std::endl;
+        ss << "Log Level: " << LogFactory::inst().GetLogInterface()->GetLogLevel() << std::endl; 
+
+        s = ss.str();
+        ran = true;
+    }
+
+    return s.c_str();
+}
+
 size_t GetUnloadedPluginList_Plugin(String *strs, size_t sizeofStrs)
 {
     vector <string> s = PluginManager::inst().GetUnloadedPluginList();
@@ -87,11 +115,12 @@ WsBool LoadPlugin_Plugin(const char* fileName)
     }
     catch(const std::exception &ex)
     {
-        std::cerr << ex.what() << std::endl;
+        LogFactory::inst().GetLogInterface()->Log(Log::ERROR, ex.what());
         return WSFALSE;
     }
     catch(...)
     {
+        LogFactory::inst().GetLogInterface()->Log(Log::FATAL, std::string("Unknown error while loading ") + std::string(fileName));
 	    return WSFALSE;
     }
 }
@@ -105,11 +134,12 @@ WsBool UnloadPlugin_Plugin(const char *fileName)
     }
     catch(const std::exception &ex)
     {
-        std::cerr << ex.what() << std::endl;
+        LogFactory::inst().GetLogInterface()->Log(Log::ERROR, ex.what());
         return WSFALSE;
     }
     catch(...)
     {
+        LogFactory::inst().GetLogInterface()->Log(Log::FATAL, std::string("Unknown error while unloading ") + std::string(fileName));
         return WSFALSE;
     }
 }
@@ -123,11 +153,12 @@ WsBool ReloadPlugin_Plugin(const char *fileName)
     }
     catch(const std::exception &ex)
     {
-        std::cerr << ex.what() << std::endl;
+        LogFactory::inst().GetLogInterface()->Log(Log::ERROR, ex.what());
         return WSFALSE;
     }
     catch(...)
     {
+        LogFactory::inst().GetLogInterface()->Log(Log::FATAL, std::string("Unknown error while reloading ") + std::string(fileName));
         return WSFALSE;
     }
 }
@@ -244,19 +275,19 @@ WsBool IsEventSubscribed_Plugin(const struct _PluginInterface *pi, WsHandle hand
 
 void SetLogLevel_Plugin(const struct _PluginInterface *pi, const LogLevel type)
 {
-    pi->data->log.SetLogLevel((unsigned int)type);
+    pi->data->log->SetLogLevel((unsigned int)type);
 }
 LogLevel GetLogLevel_Plugin(const struct _PluginInterface *pi)
 {
-    return (LogLevel)pi->data->log.GetLogLevel();
+    return (LogLevel)pi->data->log->GetLogLevel();
 }
 void Log_Plugin(const struct _PluginInterface *pi, const char *s)
 {
-    pi->data->log.Log(s);
+    pi->data->log->Log(s);
 }
 void Log2_Plugin(const struct _PluginInterface *pi, const LogLevel type, const char *s)
 {
-    pi->data->log.Log((unsigned int)type, s);
+    pi->data->log->Log((unsigned int)type, s);
 }
 
 size_t GetExtensionList_Plugin(String *strs, size_t sizeofStrs)
@@ -571,9 +602,7 @@ PluginInterfaceWrapper::PluginInterfaceWrapper()
     pluginInterface.memory = new MemoryInterface;
 
     pluginInterface.data->moduleHandle = 0;
-
-    pluginInterface.data->log.SetLogLevel(Log::INFO);
-    LogFactory::inst().SetupConsoleLog(pluginInterface.data->log);
+    pluginInterface.data->log = LogFactory::inst().GetLogInterface();
 
     pluginInterface.log->Debug = (WsHandle)Log::DEBUG;
     pluginInterface.log->Info = (WsHandle)Log::INFO;
@@ -596,6 +625,8 @@ PluginInterfaceWrapper::PluginInterfaceWrapper()
     pluginInterface.system->GetModuleBase = GetModuleBase_Plugin;
     pluginInterface.system->GetProcAddress = GetProcAddress_Plugin;
     pluginInterface.system->RaiseException = RaiseException_Plugin;
+    pluginInterface.system->GetAboutMessage = GetAboutMessage_Plugin;
+    pluginInterface.system->GetVersion = GetVersion_Plugin;
 
     pluginInterface.event->SubscribeEvent = SubscribeEvent_Plugin;
     pluginInterface.event->GetEventList = GetEventList_Plugin;
@@ -646,7 +677,7 @@ void Plugin::InternalLoad()
     // plugins are forward compatible, 
     // that means newer version plugins do not work with older versions of packet editor
     // while older version plugins work with newer version of packet editor
-    if(Load() > PACKET_EDITOR_VERSION)
+    if(Load() > AXF_VERSION)
     {
         throw WSException("This plugin is compiled with a newer version of packet editor and "  
                            "is not supported with the current version of packet editor");

@@ -39,20 +39,20 @@ static void InitExtensions()
                 }
                 catch(const std::exception &ex)
                 {
-                    std::cerr << "ERROR: " << ex.what() << std::endl;
+                    MessageBoxA(0, ex.what(), "ExtInit Error", 0);
                 }
             }
         }
         catch(const std::exception &ex)
         {
-            MessageBoxA(0, ex.what(), "Error", 0);
+            MessageBoxA(0, ex.what(), "ExtInit Error", 0);
         }
         
     }
     else
     {
         std::string err = std::string("Failed to open ") + CONFIG_FILEPATH;
-        MessageBoxA(0, err.c_str(), "Error", 0);
+        MessageBoxA(0, err.c_str(), "ExtInit Error", 0);
     }
 }
 

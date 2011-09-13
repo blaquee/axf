@@ -76,8 +76,6 @@ public:
 
 //////////////////////////////////////////////////////////////////////////
 
-void OpenConsole();
-
 bool IsHiddenModule(PVOID module);
 
 ModuleRecord UnlinkModule(HINSTANCE moduleBase);

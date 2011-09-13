@@ -4,6 +4,7 @@
 #include "../singleton.h"
 struct ExtensionFactory;
 struct ExtenderInterface;
+struct String;
 
 class AXFExtension : public Singleton<AXFExtension>
 {
@@ -16,6 +17,14 @@ class AXFExtension : public Singleton<AXFExtension>
 public:
     void SetupExtenderInterface(ExtenderInterface&);
 };
+
+//////////////////////////////////////////////////////////////////////////
+
+typedef void (*LogOutputFunc)(LogLevel, const char *);
+
+typedef void (*LogFormatterFunc)(String **, LogLevel, const char *);
+
+typedef WsBool (*LogFilterFunc)(LogLevel, const char *);
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -35,12 +44,18 @@ struct ExtensionExtenderInterface
     void (*AddExtension)(const char *name, const ExtensionFactory *fac);
 };
 
+struct LogExtenderInterface
+{
+    void (*AddLogger)(LogLevel, LogOutputFunc, LogFormatterFunc, LogFilterFunc);
+};
+
 struct ExtenderInterface
 {
     ExtenderInterfaceData * data;
 
     EventExtenderInterface *event;
     ExtensionExtenderInterface *extension;
+    LogExtenderInterface *log;
 };
 
 #endif // extensionmanager_h__

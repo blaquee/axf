@@ -261,6 +261,9 @@ typedef struct _SystemInterface
 
     /* Throws an exception to the plugin manager, dataUnused must be set to NULL for now  */
     void (*RaiseException)(const char *exceptionMsg, void *dataUnused);
+
+    const char* (*GetAboutMessage)(void);
+    unsigned int (*GetVersion)(void);
 } SystemInterface;
 
 typedef struct _LoggingInterface
@@ -497,32 +500,44 @@ public:
     {
         GetPluginInterface().system->RaiseException(exceptionMsg.c_str(), dataUnused);
     }
+
+    std::string GetAboutMessage()
+    {
+        return GetPluginInterface().system->GetAboutMessage();
+    }
+    unsigned int GetVersion()
+    {
+        return GetPluginInterface().system->GetVersion();
+    }
 };
 
 class LoggingInterfaceEx : public virtual InterfaceEx
 {
 public:
-    LogLevel Debug;
-    LogLevel Info;
-    LogLevel Warn;
-    LogLevel Error;
-    LogLevel Fatal;
+    LoggingInterfaceEx(){}
+    LoggingInterfaceEx(const PluginInterface *pi) : InterfaceEx(pi){}
+    virtual ~LoggingInterfaceEx(){}
 
-    LoggingInterfaceEx()
-      : Debug (0),
-        Info (0),
-        Warn(0),
-        Error (0),
-        Fatal (0){}
-
-    LoggingInterfaceEx(const PluginInterface *pi) 
-        : InterfaceEx(pi),
-        Debug (pi->log->Debug),
-        Info (pi->log->Info),
-        Warn(pi->log->Warn),
-        Error (pi->log->Error),
-        Fatal (pi->log->Fatal)
-    {}
+    LogLevel Debug() const
+    {
+        return GetPluginInterface().log->Debug;
+    }
+    LogLevel Info() const
+    {
+        return GetPluginInterface().log->Info;
+    }
+    LogLevel Warn() const
+    {
+        return GetPluginInterface().log->Warn;
+    }
+    LogLevel Error() const
+    {
+        return GetPluginInterface().log->Error;
+    }
+    LogLevel Fatal() const
+    {
+        return GetPluginInterface().log->Fatal;
+    }
 
     void SetLogLevel(const LogLevel type) const
     {

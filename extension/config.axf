@@ -1,6 +1,6 @@
 {
     "extensions" : 
     [
-        "wingui.dll", "memoryext.dll"
+        "consolelogger_ext.dll", "wingui.dll", "memoryext.dll"
     ]
 }
