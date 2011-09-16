@@ -1,6 +1,10 @@
 -------------
 HIGH Priority
 -------------
+The current method of loading plugin is flawed because it checks the version after the plugin has been loaded
+Solution: Subscribe to the ON_LOAD_EVENT, force plugin writers to return the plugin version only in OnLoad()
+plugins can also return author and description info
+
 add config file for AXF
 add ON_EXTENSION_LOADED event (to solve the load order issue for extension plugins)
 add ON_LOAD_PLUGIN event (to handle loading of unknown plugin types, AXF only knows how to load DLL plugins)
