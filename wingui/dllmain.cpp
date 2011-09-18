@@ -26,6 +26,21 @@ inline const char *LogLevelToText(LogLevel level)
     return text;
 }
 
+static LogLevel GetLogLevel(unsigned int level)
+{
+    switch(level)
+    {
+    case 0: return pi.Quiet();
+    case 1: return pi.Info();
+    case 2: return pi.Debug();
+    case 3: return pi.Warn();
+    case 4: return pi.Error();
+
+    default:
+        return pi.Error();
+    }
+}
+
 static void UpdateLogLevel(HWND hwndDlg)
 {
     HWND hwndLogLevelSlider = GetDlgItem(hwndDlg, IDC_LOGLEVEL);
@@ -38,7 +53,7 @@ static void SetLogLevel(HWND hwndDlg)
     HWND hwndLogLevelSlider = GetDlgItem(hwndDlg, IDC_LOGLEVEL);
     LRESULT level = SendMessageA(hwndLogLevelSlider, TBM_GETPOS, 0, 0);
 
-    pi.SetLogLevel((LogLevel)level);
+    pi.SetLogLevel(GetLogLevel(level));
 }
 
 static void SetupLogLevelSlider(HWND hwndDlg)
