@@ -41,10 +41,23 @@ static LogLevel GetLogLevel(unsigned int level)
     }
 }
 
+static unsigned int GetLogLevelInt()
+{
+    LogLevel l = pi.GetLogLevel();
+
+    if(l == pi.Quiet()) return 0;
+    else if(l == pi.Info()) return 1;
+    else if(l == pi.Debug()) return 2;
+    else if(l == pi.Warn()) return 3;
+    else if(l == pi.Error()) return 4;
+
+    return 4;
+}
+
 static void UpdateLogLevel(HWND hwndDlg)
 {
     HWND hwndLogLevelSlider = GetDlgItem(hwndDlg, IDC_LOGLEVEL);
-    SendMessageA(hwndLogLevelSlider, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)pi.GetLogLevel());
+    SendMessageA(hwndLogLevelSlider, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)GetLogLevelInt());
 
     SetDlgItemTextA(hwndDlg, IDC_LOGLEVELLABEL, LogLevelToText(pi.GetLogLevel()));
 }
