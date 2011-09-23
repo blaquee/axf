@@ -1,2 +1,13 @@
 .+\.tlog
 .+\.obj
+.+\.manifest
+.+\.lastbuildstate
+.+\.Build\..+\.log
+.+\.pdb
+.+\.dll
+.+\.sdf
+.+\.exe
+.+\.res
+.+\.suo
+.+\.aps
+.+\.bat
