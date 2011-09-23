@@ -6,6 +6,8 @@
 .+\.pdb
 .+\.dll
 .+\.sdf
+.+\.opensdf
+.+\.ipch
 .+\.exe
 .+\.res
 .+\.suo

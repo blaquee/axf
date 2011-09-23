@@ -20,6 +20,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Public Header", "Public Hea
 		include\ext_memoryinterface.h = include\ext_memoryinterface.h
 		include\extensionapi.h = include\extensionapi.h
 		include\pluginapi.h = include\pluginapi.h
+		include\ucdl.h = include\ucdl.h
 	EndProjectSection
 EndProject
 Global
