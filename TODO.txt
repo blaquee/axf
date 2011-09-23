@@ -6,6 +6,7 @@ Solution: Subscribe to the ON_INIT_EVENT, force plugin writers to return the plu
 plugins can also return author and description info
 
 Fix the memory leak in underc! It leaks like hell when you execute a file!
+expose Pluginapi to underc plugins to make it useful
 
 add config file for AXF
 add ON_EXTENSION_LOADED event (to solve the load order issue for extension plugins)
