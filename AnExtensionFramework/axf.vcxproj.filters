@@ -105,6 +105,9 @@
     <ClCompile Include="extensionman\extension.cpp">
       <Filter>extensionman</Filter>
     </ClCompile>
+    <ClCompile Include="wsplugin\wsplugin_custom.cpp">
+      <Filter>wsplugin</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="easyhook\ASM\ILD_x86.asm">

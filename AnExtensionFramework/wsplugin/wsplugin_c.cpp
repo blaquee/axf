@@ -48,7 +48,7 @@ int DllPlugin::Load()
 
 void DllPlugin::Unload()
 {
-    set<EventFunctionData*> &eventData = GetPluginInterface().data->registerEvents[ON_UNLOAD_EVENT];
+    set<EventFunctionData*> &eventData = GetPluginInterface().data->registerEvents[ON_FINALIZE_EVENT];
 
     if(eventData.empty())
     {

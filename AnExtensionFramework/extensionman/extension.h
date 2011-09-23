@@ -18,7 +18,32 @@ public:
     void SetupExtenderInterface(ExtenderInterface&);
 };
 
+
 //////////////////////////////////////////////////////////////////////////
+// Events
+
+// extension events
+#define ON_LOAD_PLUGIN "OnLoadPlugin" // for loading of custom plugin types 
+
+//////////////////////////////////////////////////////////////////////////
+
+/* Used for the ON_LOAD_PLUGIN event */
+typedef struct _PluginBinary
+{
+    const unsigned char *data;
+    unsigned int size;
+} PluginBinary;
+typedef struct _PluginData
+{
+    int clientVersion; /* the extension sets this to AXF_PLUGIN_VERSION */
+    WsHandle clientHandle; /* the extension sets this to non-null to signify a successful load */
+    void(*OnPluginUnload)(WsHandle); /* the unload routine set by the extension, the WsHandle argument is the clientHandle */
+
+    const char *name;
+    const char *extension;
+    WsBool (*GetBinary)(struct _PluginData*, PluginBinary*);
+    void (*ReleaseBinary)(PluginBinary*);
+} PluginData;
 
 typedef void (*LogOutputFunc)(LogLevel, const char *);
 
@@ -57,6 +82,8 @@ struct ExtenderInterface
     ExtensionExtenderInterface *extension;
     LogExtenderInterface *log;
 };
+
+
 
 #endif // extensionmanager_h__
 

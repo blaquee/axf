@@ -17,7 +17,7 @@ static int HEALTH = 20; //we hack this up to 1000 using the memory interface ext
 AXF_API int OnLoad(const struct _PluginInterface *p)
 {
     pi = p;
-    pi.SubscribeEvent(ON_UNLOAD_EVENT, &OnUnload);
+    pi.SubscribeEvent(ON_FINALIZE_EVENT, &OnUnload);
 
     // The important bits are below this line
     //////////////////////////////////////////////////////////////////////////

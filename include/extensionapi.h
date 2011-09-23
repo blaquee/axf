@@ -66,6 +66,18 @@ extern "C"
  */
 AXF_API int OnExtend(const struct _PluginInterface *, const struct _ExtenderInterface *);
 
+
+/************************************************************************/
+/* Events                                                               */
+/************************************************************************/
+/* Event types used for Adding events using EventInterface::AddEvent */
+
+/* 
+    for loading of custom plugin types
+    callback prototype is void OnLoadPlugin(const PluginData*);
+*/
+#define ON_LOAD_PLUGIN "OnLoadPlugin"  
+
 /************************************************************************/
 /* Data Types                                                           */
 /************************************************************************/
@@ -77,6 +89,30 @@ typedef struct _ExtensionFactory
     ExtensionFactoryCreate Create;
     ExtensionFactoryDestroy Destroy;
 } ExtensionFactory;
+
+/* Used for the ON_LOAD_PLUGIN event */
+typedef struct _PluginBinary
+{
+    const unsigned char *data;
+    unsigned int size;
+} PluginBinary;
+typedef struct _PluginData
+{
+    /* the extension sets this to AXF_PLUGIN_VERSION */
+    int clientVersion; 
+
+    /* sets this to non-null to signify a successful load, it can be a pointer of any type */
+    WsHandle clientHandle; 
+
+    /* set this function to non-null to signify a successful load, the WsHandle argument is the clientHandle */
+    void(*OnPluginUnload)(WsHandle); 
+
+    /* PluginData inputs */
+    const char *name;
+    const char *extension;
+    WsBool (*GetBinary)(struct _PluginData*, PluginBinary*);
+    void (*ReleaseBinary)(PluginBinary*);
+} PluginData;
 
 /*
     Param1: Log Level

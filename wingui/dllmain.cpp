@@ -5,6 +5,7 @@
 
 static PluginInterfaceEx pi;
 static ExtenderInterfaceEx ei;
+static HWND gHwndDlg=0;
 
 inline const char *LogLevelToText(LogLevel level)
 {
@@ -101,6 +102,7 @@ static INT_PTR __stdcall DialogCallback(HWND hwnd, UINT uMsg, WPARAM wparam, LPA
     switch(uMsg)
     {
     case WM_INITDIALOG:
+        gHwndDlg = hwnd;
         SetupLogLevelSlider(hwnd);
         UpdatePluginLists(hwnd);
         UpdateLogLevel(hwnd);
@@ -182,7 +184,7 @@ static DWORD __stdcall DialogThread(LPVOID data)
 
 static void MsgBoxLogOutput(LogLevel level, const char *s)
 {
-    MessageBoxA(0,s,LogLevelToText(level),0);
+    MessageBoxA(gHwndDlg,s,LogLevelToText(level),0);
 }
 
 AXF_API int OnExtend(const struct _PluginInterface *p, const struct _ExtenderInterface *e)

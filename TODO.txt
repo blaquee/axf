@@ -2,18 +2,20 @@
 HIGH Priority
 -------------
 The current method of loading plugin is flawed because it checks the version after the plugin has been loaded
-Solution: Subscribe to the ON_LOAD_EVENT, force plugin writers to return the plugin version only in OnLoad()
+Solution: Subscribe to the ON_INIT_EVENT, force plugin writers to return the plugin version only in OnLoad()
 plugins can also return author and description info
+
+Fix the memory leak in underc! It leaks like hell when you execute a file!
 
 add config file for AXF
 add ON_EXTENSION_LOADED event (to solve the load order issue for extension plugins)
-add ON_LOAD_PLUGIN event (to handle loading of unknown plugin types, AXF only knows how to load DLL plugins)
-add underC plugin loader extension (underC is a script version of C++, use ON_LOAD_PLUGIN event to receive notification)
+
 add a lightweight reflection interface (for headerless access to AXF and extensions from any language)
 add a messaging system for interplugin communication (use the event system to deliver the messages)
 move application-specific interfaces to extension plugins to reduce the code size of AXF (For example, Hook interface and Sig scanner are application-specific)
 implement a memory allocation interface for managed memory (All plugins shall use this instead of malloc/new to avoid memory leaks and simplify code)
 
+expose EventSystem::FireEventStopIf to pluginapi
 ------------
 MID Priority
 ------------
@@ -33,4 +35,5 @@ port pluginapi.h and extensionapi.h to other languages
 ---------
 Completed
 ---------
-Nothing yet
+add ON_LOAD_PLUGIN event (to handle loading of unknown plugin types, AXF only knows how to load DLL plugins)
+add underC plugin loader extension (underC is a script version of C++, use ON_LOAD_PLUGIN event to receive notification)

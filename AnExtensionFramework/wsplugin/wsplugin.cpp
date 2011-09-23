@@ -56,6 +56,43 @@ const char *GetAboutMessage_Plugin()
     return s.c_str();
 }
 
+inline size_t GetDirectory(String *s, const std::string &dir)
+{
+    if(s == 0 || s->len <= 0)
+    {
+        return dir.length();
+    }
+
+    if(s->buffer)
+    {
+        if(s->len < dir.length())
+        {
+            s->buffer[0] = 0; 
+            s->len = 0;
+        }
+        else
+        {
+            memcpy(s->buffer, dir.c_str(), dir.length());
+            s->buffer[dir.length()] = 0;
+        }
+    }
+
+    return dir.length();
+}
+
+size_t GetBaseDirectory_Plugin(String *s)
+{
+    return GetDirectory(s, PluginManager::inst().GetBaseDirectory());
+}
+size_t GetPluginDirectory_Plugin(String *s)
+{
+    return GetDirectory(s, PluginManager::inst().GetPluginDirectory());
+}
+size_t GetExtensionDirectory_Plugin(String *s)
+{
+    return GetDirectory(s, PluginManager::inst().GetExtensionDirectory());
+}
+
 size_t GetUnloadedPluginList_Plugin(String *strs, size_t sizeofStrs)
 {
     vector <string> s = PluginManager::inst().GetUnloadedPluginList();
@@ -621,6 +658,9 @@ PluginInterfaceWrapper::PluginInterfaceWrapper()
     pluginInterface.system->RaiseException = RaiseException_Plugin;
     pluginInterface.system->GetAboutMessage = GetAboutMessage_Plugin;
     pluginInterface.system->GetVersion = GetVersion_Plugin;
+    pluginInterface.system->GetBaseDirectory = GetBaseDirectory_Plugin;
+    pluginInterface.system->GetPluginDirectory = GetPluginDirectory_Plugin;
+    pluginInterface.system->GetExtensionDirectory = GetExtensionDirectory_Plugin;
 
     pluginInterface.event->SubscribeEvent = SubscribeEvent_Plugin;
     pluginInterface.event->GetEventList = GetEventList_Plugin;

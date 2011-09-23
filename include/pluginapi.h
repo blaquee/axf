@@ -119,6 +119,14 @@ static void OnUnload(void *unused);
 
 
 /************************************************************************/
+/* Events                                                               */
+/************************************************************************/
+/* Event types used for Adding events using EventInterface::AddEvent */
+#define ON_INIT_EVENT "OnInit" /* a plugin subscribes to this event if it wishes to perform initialization */
+#define ON_FINALIZE_EVENT "OnFinalize" /* subscribe to this event if you want your plugin to be unloadable*/
+
+
+/************************************************************************/
 /* Data Types                                                           */
 /************************************************************************/
 
@@ -132,10 +140,6 @@ typedef const WsHandle LogLevel;
 typedef WsHandle WsExtension;
 
 enum {WSFALSE=0, WSTRUE=1};
-
-/* Event types used for Adding events using EventInterface::AddEvent */
-#define ON_UNLOAD_EVENT "OnUnload"
-#define ON_SOCKET_EVENT "OnSocketEvent"
 
 enum 
 { 
@@ -264,6 +268,11 @@ typedef struct _SystemInterface
 
     const char* (*GetAboutMessage)(void);
     unsigned int (*GetVersion)(void);
+    
+    /* Pass NULL to these functions to return the required size of the string */
+    size_t (*GetBaseDirectory)(String*);
+    size_t (*GetPluginDirectory)(String*);
+    size_t (*GetExtensionDirectory)(String*);
 } SystemInterface;
 
 typedef struct _LoggingInterface
@@ -470,6 +479,16 @@ public:
 };
 class SystemInterfaceEx : public virtual InterfaceEx
 {
+    std::string GetDirectory(size_t(*GetDirFunc)(String*)) const 
+    {
+        size_t len = GetDirFunc(0);
+        String *s = AllocString(len, 1);
+        GetDirFunc(s);
+        std::string res = s->buffer;
+        FreeString1(s);
+
+        return res;
+    }
 
 public:
     SystemInterfaceEx(){}
@@ -502,13 +521,28 @@ public:
         GetPluginInterface().system->RaiseException(exceptionMsg.c_str(), dataUnused);
     }
 
-    std::string GetAboutMessage()
+    std::string GetAboutMessage() const
     {
         return GetPluginInterface().system->GetAboutMessage();
     }
-    unsigned int GetVersion()
+    unsigned int GetVersion() const
     {
         return GetPluginInterface().system->GetVersion();
+    }
+
+
+    std::string  GetBaseDirectory() const
+    {
+        return GetDirectory(GetPluginInterface().system->GetBaseDirectory);
+        
+    }
+    std::string  GetPluginDirectory() const
+    {
+        return GetDirectory(GetPluginInterface().system->GetPluginDirectory);
+    }
+    std::string  GetExtensionDirectory() const
+    {
+        return GetDirectory(GetPluginInterface().system->GetExtensionDirectory);
     }
 };
 

@@ -54,6 +54,36 @@ public:
 
     // event related functions
     std::map<std::string, std::set<EventFunctionData*> > &GetEvents();
+    void FireEvent(const std::string &name, void *data) const;
+
+    template<class PredFunc, class DataType>
+    void FireEventStopIf( const std::string &name, const DataType &data, PredFunc func ) const
+    {
+        map<string, set<EventFunctionData*> >::const_iterator eventDataIt = PluginManager::inst().GetEvents().find(name);
+        if(eventDataIt == PluginManager::inst().GetEvents().end())
+        {
+            return;
+        }
+
+        if(eventDataIt->second.empty())
+        {
+            return;
+        }
+
+        for(std::set<EventFunctionData*>::const_iterator it = eventDataIt->second.begin(); it != eventDataIt->second.end(); ++it)
+        {
+            EventFunction eventFunc = (*it)->func;
+
+            if(eventFunc)
+            {
+                eventFunc((void*)&data);
+            }
+            if(func(data))
+            {
+                return;
+            }
+        }
+    }
 
     // extension related functions
     std::map<std::string, ExtensionFactory> &GetExtensionFactories(); // ext_name -> factory_function

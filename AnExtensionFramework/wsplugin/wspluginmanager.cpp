@@ -48,7 +48,9 @@ PluginManager::PluginManager()
 
     InitPluginManager(*this);
 
-    events[ON_UNLOAD_EVENT];
+    events[ON_INIT_EVENT];
+    events[ON_FINALIZE_EVENT];
+    events[ON_LOAD_PLUGIN];
 }
 
 PluginManager::~PluginManager()
@@ -107,6 +109,30 @@ std::string PluginManager::GetPluginDirectory() const
 map<string, set<EventFunctionData*> > & PluginManager::GetEvents()
 {
     return events;
+}
+
+void PluginManager::FireEvent( const std::string &name, void *data ) const
+{
+    map<string, set<EventFunctionData*> >::const_iterator eventDataIt = PluginManager::inst().GetEvents().find(name);
+    if(eventDataIt == PluginManager::inst().GetEvents().end())
+    {
+        return;
+    }
+
+    if(eventDataIt->second.empty())
+    {
+        return;
+    }
+
+    for(std::set<EventFunctionData*>::const_iterator it = eventDataIt->second.begin(); it != eventDataIt->second.end(); ++it)
+    {
+        EventFunction eventFunc = (*it)->func;
+
+        if(eventFunc)
+        {
+            eventFunc(data);
+        }
+    }
 }
 
 // Extensions
@@ -221,6 +247,10 @@ namespace
                         {
                             pluginNames.push_back(currentFile.c_str());
                         }
+                        else if(ext == "cpp")
+                        {
+                            pluginNames.push_back(currentFile.c_str());
+                        }
                     }
 
                 }
@@ -332,18 +362,28 @@ void PluginManager::LoadPlugin( const std::string &fileName )
             try
             {
                 dllPlugin->InternalLoad();
+                loadedPlugins.push_back(dllPlugin);
             }
             catch(...)
             {
                 delete dllPlugin;
                 throw;
             }
-
-            loadedPlugins.push_back(dllPlugin);
         }
         else
         {
-            throw WSException("not a plugin!");
+            CustomPlugin *customPlugin = 0;
+            try
+            {
+                customPlugin = new CustomPlugin(GetPluginDirectory(), fileName, ext);
+                customPlugin->InternalLoad();
+                loadedPlugins.push_back(customPlugin);
+            }
+            catch(...)
+            {
+                delete customPlugin;
+                throw;
+            }
         }
     }
     else
@@ -380,3 +420,5 @@ void PluginManager::SoftReloadPlugin( const std::string &fileName )
 
     (*pluginIt)->SoftReload();
 }
+
+

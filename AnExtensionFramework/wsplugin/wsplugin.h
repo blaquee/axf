@@ -25,7 +25,9 @@ typedef void (*ExtensionFactoryDestroy)(WsExtension);
 // constant defs
 enum {WSFALSE=0, WSTRUE=1};
 
-#define ON_UNLOAD_EVENT "OnUnload"
+// plugin events
+#define ON_INIT_EVENT "OnInit" // a plugin subscribes to this event if it wishes to perform initialization
+#define ON_FINALIZE_EVENT "OnFinalize" // used for unloading plugins
 
 // ProtectionMode
 enum 
@@ -113,6 +115,11 @@ typedef struct _SystemInterface
 
     const char* (*GetAboutMessage)(void);
     unsigned int (*GetVersion)(void);
+
+    /* Pass NULL to these functions to return the required size of the string */
+    size_t (*GetBaseDirectory)(String*);
+    size_t (*GetPluginDirectory)(String*);
+    size_t (*GetExtensionDirectory)(String*);
 } SystemInterface;
 
 typedef struct _LoggingInterface
@@ -366,6 +373,24 @@ class DllPlugin : public Plugin
 public:
     DllPlugin( const std::string &dir, const std::string &name );
     virtual ~DllPlugin();
+
+protected:
+    virtual int Load();
+    virtual void Unload();
+
+};
+
+class CustomPlugin : public Plugin
+{
+    std::string ext;
+
+    // client data
+    WsHandle clientHandle;
+    void(*OnPluginUnload)(WsHandle);
+
+public:
+    CustomPlugin( const std::string &dir, const std::string &name, const std::string &ext );
+    virtual ~CustomPlugin();
 
 protected:
     virtual int Load();
