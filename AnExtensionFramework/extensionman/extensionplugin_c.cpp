@@ -29,35 +29,39 @@ int ExtensionDllPlugin::Load()
 
     module = std::shared_ptr<ModuleLoaderHider>(new ModuleLoaderHider(fileName));
 
-    OnLoad = (OnExtendType) PesGetProcAddress(*module, "OnExtend");
+    extDesc = (ExtensionDescription*) PesGetProcAddress(*module, "extdesc");
 
-    if(OnLoad)
+    if(extDesc)
+        extDesc = *(ExtensionDescription**) extDesc; // dereference it again since its an exported variable
+
+    if(extDesc)
     {
+        if(extDesc->OnInit == 0)
+        {
+            throw WSException("this extension has an invalid OnInit function");
+        }
 
-        try
-        {
-            AXFExtension::inst().SetupExtenderInterface(extender);
-            GetPluginInterface().data->moduleHandle = (void*)*module;
-            return OnLoad(&GetPluginInterface(), &extender);
-        }
-        catch (const WSException &)
-        {
-            throw;
-        }
+        AXFExtension::inst().SetupExtenderInterface(extender);
+        GetPluginInterface().data->moduleHandle = (void*)*module;
+        return extDesc->pluginapiVersion;
     }
     else
     {
-        throw WSException("this dll has not exported OnExtend");
+        throw WSException("this extension has not exported extdesc");
     }
 }
-
+void ExtensionDllPlugin::OnInit()
+{
+    if(extDesc->OnInit)
+        extDesc->OnInit(&GetPluginInterface(), &extender);
+}
 void ExtensionDllPlugin::Unload()
 {
     throw WSException("Cannot unload Extensions");
 }
 
 ExtensionDllPlugin::ExtensionDllPlugin( const std::string &dir, const std::string &name )
-    : Plugin(dir, name), OnLoad(0)
+    : Plugin(dir, name), extDesc(0)
 {
 
 }

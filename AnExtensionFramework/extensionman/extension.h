@@ -3,7 +3,6 @@
 
 #include "../singleton.h"
 struct ExtensionFactory;
-struct ExtenderInterface;
 struct String;
 
 class AXFExtension : public Singleton<AXFExtension>
@@ -15,8 +14,28 @@ class AXFExtension : public Singleton<AXFExtension>
 
     AXFExtension(const AXFExtension&);
 public:
-    void SetupExtenderInterface(ExtenderInterface&);
+    void SetupExtenderInterface(struct _ExtenderInterface&);
 };
+
+
+//////////////////////////////////////////////////////////////////////////
+// ExtensionDescription
+
+typedef struct _ExtensionDescription
+{
+    unsigned int version:32;  /* the version of this plugin */
+    unsigned int pluginapiVersion:32; /* the version of the pluginapi this plugin is using, must be AXF_API_VERSION (was AXF_PLUGIN_VERSION) */
+
+    void (*OnInit)(const struct _PluginInterface*, const struct _ExtenderInterface*);  /* entry point, cdecl only */
+
+    /* optional info */ 
+    const char *name;
+    const char *author; 
+    const char *about;  
+
+    void *reserved0; /* must be NULL */
+    void *reserved1; /* must be NULL */
+} ExtensionDescription;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -74,14 +93,14 @@ struct LogExtenderInterface
     void (*AddLogger)(LogLevel, LogOutputFunc, LogFormatterFunc, LogFilterFunc);
 };
 
-struct ExtenderInterface
+typedef struct _ExtenderInterface
 {
     ExtenderInterfaceData * data;
 
     EventExtenderInterface *event;
     ExtensionExtenderInterface *extension;
     LogExtenderInterface *log;
-};
+} ExtenderInterface;
 
 
 

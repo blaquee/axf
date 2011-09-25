@@ -322,14 +322,31 @@ public:
 
 protected:
     // subclasses must implement these functions
-    virtual int Load()=0; // returns the version of the plugin
+    virtual int Load()=0; // returns the version of the pluginapi
     virtual void Unload()=0;
+    virtual void OnInit()=0; // calls the OnInit function of the plugin
 };
 
 
 //////////////////////////////////////////////////////////////////////////
 
-typedef int (*OnLoadType)(const PluginInterface *);
+typedef void (*OnInitType)(const PluginInterface *);
+
+typedef struct _PluginDescription
+{
+    unsigned int version:32;  /* the version of this plugin */
+    unsigned int pluginapiVersion:32; /* the version of the pluginapi this plugin is using, must be AXF_API_VERSION (was AXF_PLUGIN_VERSION) */
+
+    void (*OnInit)(const struct _PluginInterface*);  /* entry point, cdecl only */
+
+    /* optional info */ 
+    const char *name;
+    const char *author; 
+    const char *about;  
+
+    void *reserved0; /* must be NULL */
+    void *reserved1; /* must be NULL */
+} PluginDescription;
 
 class ModuleLoaderHider
 {
@@ -366,9 +383,8 @@ public:
 class DllPlugin : public Plugin
 {
     // these will be obtained from the dlls
-    OnLoadType OnLoad;
+    PluginDescription *pluginDesc;
     std::shared_ptr<ModuleLoaderHider> module;
-
 
 public:
     DllPlugin( const std::string &dir, const std::string &name );
@@ -377,7 +393,7 @@ public:
 protected:
     virtual int Load();
     virtual void Unload();
-
+    virtual void OnInit();
 };
 
 class CustomPlugin : public Plugin
@@ -395,7 +411,7 @@ public:
 protected:
     virtual int Load();
     virtual void Unload();
-
+    virtual void OnInit();
 };
 
 

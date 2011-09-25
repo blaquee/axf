@@ -4,6 +4,7 @@
 #include "wsexception.h"
 #include "wspluginmanager.h"
 #include "../extensionman/extension.h" // plugindata and stuff
+#include "wsversion.h"
 
 using namespace std;
 
@@ -72,7 +73,12 @@ struct StopOnClientHandleValid
 };
 int CustomPlugin::Load()
 {
-    
+    // just return the api version as required by the plugin manager
+    return AXF_VERSION;
+}
+
+void CustomPlugin::OnInit()
+{
     PluginData pluginData;
     pluginData.clientVersion = 0;
     pluginData.clientHandle = 0;
@@ -82,7 +88,7 @@ int CustomPlugin::Load()
     pluginData.name = GetFileName().c_str();
     pluginData.GetBinary = &PluginData_GetBinary;
     pluginData.ReleaseBinary = &PluginData_ReleaseBinary;
-    
+
     try 
     {
         PluginManager::inst().FireEventStopIf(ON_LOAD_PLUGIN, pluginData, StopOnClientHandleValid());
@@ -90,7 +96,6 @@ int CustomPlugin::Load()
         {
             clientHandle = pluginData.clientHandle;
             OnPluginUnload = pluginData.OnPluginUnload;
-            return pluginData.clientVersion;
         }
         else
         {

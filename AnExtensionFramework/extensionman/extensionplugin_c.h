@@ -3,11 +3,11 @@
 
 #include "../wsplugin/wsplugin.h"
 
-typedef int (*OnExtendType)(const PluginInterface *, const ExtenderInterface *);
+
 class ExtensionDllPlugin : public Plugin
 {
     // these will be obtained from the dlls
-    OnExtendType OnLoad;
+    ExtensionDescription *extDesc;
     std::shared_ptr<ModuleLoaderHider> module;
     ExtenderInterface extender;
 
@@ -18,7 +18,7 @@ public:
 protected:
     virtual int Load();
     virtual void Unload();
-
+    virtual void OnInit();
 };
 
 

@@ -2,6 +2,9 @@
 #include "extensionapi.h"
 #include "ext_memoryinterface.h"
 
+AXF_EXTENSION_DESCRIPTION(1, OnInitExtension, "Memory Modder", "Hunter", "Modify the memory of your process with this extension")
+
+
 static PluginInterfaceEx pi;
 static ExtenderInterfaceEx ei;
 
@@ -45,14 +48,12 @@ namespace MemoryInterfaceFactory1
 }
 
 
-AXF_API int OnExtend(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
+static void OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
 {
     pi = p;
     ei = e;
 
     ExtensionFactory memExt = { &MemoryInterfaceFactory1::Create, &MemoryInterfaceFactory1::Destroy };
     ei.AddExtension(MEMORY_INTERFACE_1, &memExt);
-
-    return AXF_PLUGIN_VERSION;
 }
 

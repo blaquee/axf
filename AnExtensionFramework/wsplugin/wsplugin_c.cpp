@@ -9,7 +9,7 @@ using namespace std;
 
 DllPlugin::DllPlugin( const std::string &dir, const std::string &name )
 : Plugin(dir, name),
-OnLoad(0)
+pluginDesc(0)
 {
 
 }
@@ -25,24 +25,31 @@ int DllPlugin::Load()
 
     module = std::shared_ptr<ModuleLoaderHider>(new ModuleLoaderHider(fileName));
 
-    OnLoad = (OnLoadType) PesGetProcAddress(*module, "OnLoad");
+    pluginDesc = (PluginDescription*) PesGetProcAddress(*module, "plugindesc");
 
-    if(OnLoad)
+    if(pluginDesc)
+        pluginDesc = *(PluginDescription**) pluginDesc; // dereference it again since its an exported variable
+
+    if(pluginDesc)
     {
-
-        try
+        if(pluginDesc->OnInit == 0)
         {
-            GetPluginInterface().data->moduleHandle = (void*)*module;
-            return OnLoad(&GetPluginInterface());
+            throw WSException("this plugin has an invalid OnInit function");
         }
-        catch (const WSException &)
-        {
-            throw;
-        }
+        GetPluginInterface().data->moduleHandle = (void*)*module;
+        return pluginDesc->pluginapiVersion;
     }
     else
     {
-        throw WSException("this dll has not exported OnLoad");
+        throw WSException("this plugin has not exported plugindesc");
+    }
+}
+
+void DllPlugin::OnInit()
+{
+    if(pluginDesc && pluginDesc->OnInit)
+    {
+        pluginDesc->OnInit(&GetPluginInterface());
     }
 }
 
@@ -52,7 +59,7 @@ void DllPlugin::Unload()
 
     if(eventData.empty())
     {
-        throw WSException("this dll has not exported OnUnload");
+        throw WSException("this dll has not subscribed to ON_FINALIZE_EVENT");
     }
 
     for(set<EventFunctionData*>::const_iterator it = eventData.begin(); it != eventData.end(); ++it)

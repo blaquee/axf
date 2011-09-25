@@ -705,16 +705,26 @@ Plugin::~Plugin()
 {
 
 }
-
 void Plugin::InternalLoad()
 {
-    // plugins are forward compatible, 
-    // that means newer version plugins do not work with older versions of packet editor
-    // while older version plugins work with newer version of packet editor
-    if(Load() > AXF_VERSION)
+    // plugins are backward compatible with AXF, 
+    // that means newer version plugins do not work with older versions of AXF
+    int v = Load();
+    if(v > AXF_VERSION)
     {
-        throw WSException("This plugin is compiled with a newer version of packet editor and "  
-                           "is not supported with the current version of packet editor");
+        std::stringstream ss;
+        ss << std::endl 
+            << "pluginapi version: " << v << std::endl 
+            <<  "AXF version: " << AXF_VERSION << std::endl
+            << "Plugin path: " << GetFilePath() << std::endl
+            << "Plugin filename: " << GetFileName() << std::endl;
+            
+        throw WSException(std::string("This plugin is compiled with a newer version of AXF and "  
+                           "is not supported with the current version of AXF ") + ss.str());
+    }
+    else
+    {
+        OnInit();
     }
 }
 

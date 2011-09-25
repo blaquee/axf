@@ -54,17 +54,49 @@ extern "C"
 #endif
     
 /************************************************************************/
-/* Export Functions/Events                                              */
+/* Plugin Description and Events                                        */
 /************************************************************************/
 
-/* The following functions must be implemented with C (__cdecl) calling convention and exported from the dll */
+typedef struct _ExtensionDescription
+{
+    unsigned int version:32;  /* the version of this plugin */
+    unsigned int pluginapiVersion:32; /* the version of the pluginapi this plugin is using, must be AXF_API_VERSION (was AXF_PLUGIN_VERSION) */
+
+    void (*OnInit)(const struct _PluginInterface*, const struct _ExtenderInterface*);  /* entry point, cdecl only */
+
+    /* optional info */ 
+    const char *name;
+    const char *author; 
+    const char *about;  
+
+    void *reserved0; /* must be NULL */
+    void *reserved1; /* must be NULL */
+} ExtensionDescription;
+
+/*
+    Every plugin must export a pointer to a PluginDescription filled with the required info (version, pluginapiVersion and initFunction)
+    either by using the convenience macro AXF_PLUGIN_DESCRIPTION() or manually exporting "PluginDescription *plugindesc"
+
+    "version" should contain an unsigned int that is meaningful to your plugin
+    "pluginapiVersion" should always be AXF_API_VERSION (any other value may cause your plugin to be incompatible with AXF)
+    "initFunction" should contain a pointer to your OnInit function
+
+    name, author and about are optional (use either NULL or a pointer to string)
+
+    the reserved fields must be NULL
+*/
+#define AXF_EXTENSION_DESCRIPTION(version, initFunction, name, author, about) \
+    static ExtensionDescription extdesc_ = { version, AXF_API_VERSION, &initFunction, name, author, about, 0, 0 }; \
+    AXF_EXPORT ExtensionDescription *extdesc = &extdesc_;
+
+
+/* The following functions must be implemented with C (__cdecl) calling convention */
 
 /* called when the plugin gets loaded
  the plugin cannot be loaded if this function isn't implemented 
- 
- Must return AXF_PLUGIN_VERSION
  */
-AXF_API int OnExtend(const struct _PluginInterface *, const struct _ExtenderInterface *);
+static void OnInitExtension(const struct _PluginInterface *, const struct _ExtenderInterface*);
+
 
 
 /************************************************************************/

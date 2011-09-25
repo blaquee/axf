@@ -72,57 +72,86 @@ service = Bug fixes or enhancements to the system, no API changes and will not r
 
 */
 
-#define AXF_PLUGIN_MAJOR_VERSION 1
-#define AXF_PLUGIN_MINOR_VERSION 0
-#define AXF_PLUGIN_SERVICE_VERSION 0
+#define AXF_API_MAJOR_VERSION 1
+#define AXF_API_MINOR_VERSION 0
+#define AXF_API_SERVICE_VERSION 0
 
-#define AXF_PLUGIN_VERSION ( ((AXF_PLUGIN_MAJOR_VERSION) << (16)) | \
-                             ((AXF_PLUGIN_MINOR_VERSION) << (8))  |  \
-                              (AXF_PLUGIN_SERVICE_VERSION) )
+#define AXF_API_VERSION ( ((AXF_API_MAJOR_VERSION) << (16)) | \
+                             ((AXF_API_MINOR_VERSION) << (8))  |  \
+                              (AXF_API_SERVICE_VERSION) )
 
     
 /************************************************************************/
-/* Export Functions/Events                                              */
+/* Plugin Description and Events                                        */
 /************************************************************************/
 
 #if defined(WIN32) || defined(_WIN32)
-    #undef AXF_API
+    #undef AXF_EXPORT
 
     #ifdef __cplusplus
-        #define AXF_API extern "C" __declspec(dllexport)
+        #define AXF_EXPORT extern "C" __declspec(dllexport)
     #else
-        #define AXF_API __declspec(dllexport) 
+        #define AXF_EXPORT __declspec(dllexport) 
     #endif
 #else
-
-    #undef AXF_API
-
-    #define AXF_API
-
+    #undef AXF_EXPORT
+    #define AXF_EXPORT
 #endif
 
-/* The following functions must be implemented with C (__cdecl) calling convention and exported from the dll */
+typedef struct _PluginDescription
+{
+    unsigned int version:32;  /* the version of this plugin */
+    unsigned int pluginapiVersion:32; /* the version of the pluginapi this plugin is using, must be AXF_API_VERSION (was AXF_PLUGIN_VERSION) */
+
+    void (*OnInit)(const struct _PluginInterface*);  /* entry point, cdecl only */
+
+    /* optional info */ 
+    const char *name;
+    const char *author; 
+    const char *about;  
+
+    void *reserved0; /* must be NULL */
+    void *reserved1; /* must be NULL */
+} PluginDescription;
+
+/*
+    Every plugin must export a pointer to a PluginDescription filled with the required info (version, pluginapiVersion and initFunction)
+    either by using the convenience macro AXF_PLUGIN_DESCRIPTION() or manually exporting "PluginDescription *plugindesc"
+
+    "version" should contain an unsigned int that is meaningful to your plugin
+    "pluginapiVersion" should always be AXF_API_VERSION (any other value may cause your plugin to be incompatible with AXF)
+    "initFunction" should contain a pointer to your OnInit function
+
+    name, author and about are optional (use either NULL or a pointer to string)
+
+    the reserved fields must be NULL
+*/
+#define AXF_PLUGIN_DESCRIPTION(version, initFunction, name, author, about) \
+    static PluginDescription plugindesc_ = { version, AXF_API_VERSION, &initFunction, name, author, about, 0, 0 }; \
+    AXF_EXPORT PluginDescription *plugindesc = &plugindesc_;
+
+
+/* The following functions must be implemented with C (__cdecl) calling convention */
 
 /* called when the plugin gets loaded
  the plugin cannot be loaded if this function isn't implemented 
- 
- Must return AXF_PLUGIN_VERSION
  */
-AXF_API int OnLoad(const struct _PluginInterface *);
+static void OnInit(const struct _PluginInterface *);
 
 
 /* These functions may be added to the event manager via the EventInterface */
 
 /* called when the plugin gets unloaded
-   the plugin cannot be unloaded if this function isn't implemented */
-static void OnUnload(void *unused);
+   the plugin cannot be unloaded if this function isn't implemented 
+   to be used with ON_FINALIZE_EVENT
+*/
+static void OnFinalize(void *unused);
 
 
 /************************************************************************/
 /* Events                                                               */
 /************************************************************************/
 /* Event types used for Adding events using EventInterface::AddEvent */
-#define ON_INIT_EVENT "OnInit" /* a plugin subscribes to this event if it wishes to perform initialization */
 #define ON_FINALIZE_EVENT "OnFinalize" /* subscribe to this event if you want your plugin to be unloadable*/
 
 

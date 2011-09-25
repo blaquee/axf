@@ -1,10 +1,6 @@
 -------------
 HIGH Priority
 -------------
-The current method of loading plugin is flawed because it checks the version after the plugin has been loaded
-Solution: Subscribe to the ON_INIT_EVENT, force plugin writers to return the plugin version only in OnLoad()
-plugins can also return author and description info
-
 Fix the memory leak in underc! It leaks like hell when you execute a file!
 expose Pluginapi to underc plugins to make it useful
 
@@ -37,4 +33,9 @@ port pluginapi.h and extensionapi.h to other languages
 Completed
 ---------
 add ON_LOAD_PLUGIN event (to handle loading of unknown plugin types, AXF only knows how to load DLL plugins)
+
 add underC plugin loader extension (underC is a script version of C++, use ON_LOAD_PLUGIN event to receive notification)
+
+The current method of loading plugin is flawed because it checks the version after the plugin has been loaded
+Solution: Subscribe to the ON_INIT_EVENT, force plugin writers to return the plugin version only in OnLoad()
+plugins can also return author and description info

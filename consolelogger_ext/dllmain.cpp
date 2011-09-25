@@ -4,6 +4,8 @@
 
 #include "extensionapi.h"
 
+AXF_EXTENSION_DESCRIPTION(1, OnInitExtension, "Console Logger", "Hunter", "Displays the AXF log on a console")
+
 static PluginInterfaceEx pi;
 static ExtenderInterfaceEx ei;
 
@@ -52,7 +54,7 @@ static void ConsoleLogOutput(LogLevel level, const char *s)
     std::cout << title << ": " << s << std::endl;
 }
 
-AXF_API int OnExtend(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
+static void OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
 {
     pi = p;
     ei = e;
@@ -62,7 +64,5 @@ AXF_API int OnExtend(const struct _PluginInterface *p, const struct _ExtenderInt
     ei.AddLoggerAllLevel(pi, &ConsoleLogOutput, 0, 0);
 
     pi.Log(pi.GetAboutMessage());
-
-    return AXF_PLUGIN_VERSION;
 }
 

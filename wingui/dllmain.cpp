@@ -3,6 +3,8 @@
 #include "extensionapi.h"
 #include "resource.h"
 
+AXF_EXTENSION_DESCRIPTION(1, OnInitExtension, "Windows GUI for AXF", "Hunter", "Another example plugin displaying the features of AXF")
+
 static PluginInterfaceEx pi;
 static ExtenderInterfaceEx ei;
 static HWND gHwndDlg=0;
@@ -187,7 +189,7 @@ static void MsgBoxLogOutput(LogLevel level, const char *s)
     MessageBoxA(gHwndDlg,s,LogLevelToText(level),0);
 }
 
-AXF_API int OnExtend(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
+static void OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
 {
     pi = p;
     ei = e;
@@ -197,7 +199,5 @@ AXF_API int OnExtend(const struct _PluginInterface *p, const struct _ExtenderInt
     
     DWORD tid;
     CreateThread(0,0, &DialogThread, 0, 0, &tid);
-
-    return AXF_PLUGIN_VERSION;
 }
 
