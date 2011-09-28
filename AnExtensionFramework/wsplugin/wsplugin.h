@@ -125,8 +125,8 @@ typedef struct _SystemInterface
 typedef struct _LoggingInterface
 {
     LogLevel Quiet;
-    LogLevel Debug;
     LogLevel Info;
+    LogLevel Debug;
     LogLevel Warn;
     LogLevel Error;
 

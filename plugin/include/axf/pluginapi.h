@@ -43,9 +43,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <vector>
 #include <algorithm>
-#include <exception>
 #endif
 
+#include <stdlib.h>
+#include <stdarg.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -98,7 +99,7 @@ service = Bug fixes or enhancements to the system, no API changes and will not r
     #define AXF_EXPORT
 #endif
 
-typedef struct _PluginDescription
+struct _PluginDescription
 {
     unsigned int version:32;  /* the version of this plugin */
     unsigned int pluginapiVersion:32; /* the version of the pluginapi this plugin is using, must be AXF_API_VERSION (was AXF_PLUGIN_VERSION) */
@@ -112,7 +113,8 @@ typedef struct _PluginDescription
 
     void *reserved0; /* must be NULL */
     void *reserved1; /* must be NULL */
-} PluginDescription;
+};
+typedef struct _PluginDescription PluginDescription;
 
 /*
     Every plugin must export a pointer to a PluginDescription filled with the required info (version, pluginapiVersion and initFunction)
@@ -185,30 +187,31 @@ enum
     PROTECTION_MODE_WRITECOMBINE = 0x400             
 };
 
-typedef struct _ProcessInfo
+struct _ProcessInfo
 {
     char processName[2048];
     unsigned int processID;
 
-} ProcessInfo;
+};
+typedef struct _ProcessInfo ProcessInfo;
 
-typedef struct _AllocationInfo
+struct _AllocationInfo
 {
     void *base;
     size_t size;
-} AllocationInfo;
-
+};
+typedef struct _AllocationInfo AllocationInfo;
 
 /************************************************************************/
 /* Helper Functions                                                     */
 /************************************************************************/
 
-typedef struct _String
+struct _String
 {
     char* buffer;
     size_t len;
-} String;
-
+};
+typedef struct _String String;
 
 /* Allocates String Struct and allocates memory for the string and its length */
 static String* AllocString(size_t strlength, size_t strSize)
@@ -258,7 +261,7 @@ static String *ExtendString(String *oldStr, size_t extraSize)
     oldStr->len = newSize;
     return oldStr;
 }
-
+/*
 static void StringSprintf(String *s, const char *fmt, ...)
 {
     va_list ap;
@@ -278,14 +281,14 @@ static void StringSprintf(String *s, const char *fmt, ...)
         va_end(ap);
     }
 }
-
+*/
 
 
 /************************************************************************/
 /* Plugin Interface                                                     */
 /************************************************************************/
 
-typedef struct _SystemInterface
+struct _SystemInterface
 {
     void *(*GetModuleHandle)(const struct _PluginInterface*);
     void (*GetProcessInformation)(ProcessInfo *info);
@@ -302,9 +305,10 @@ typedef struct _SystemInterface
     size_t (*GetBaseDirectory)(String*);
     size_t (*GetPluginDirectory)(String*);
     size_t (*GetExtensionDirectory)(String*);
-} SystemInterface;
+};
+typedef struct _SystemInterface SystemInterface;
 
-typedef struct _LoggingInterface
+struct _LoggingInterface
 {
     LogLevel Quiet;
     LogLevel Info;
@@ -317,18 +321,20 @@ typedef struct _LoggingInterface
     LogLevel (*GetLogLevel)(const struct _PluginInterface*);
     void (*Log)(const struct _PluginInterface*, const char *s);
     void (*Log2)(const struct _PluginInterface*, const LogLevel type, const char *s);
-} LoggingInterface;
+};
+typedef struct _LoggingInterface LoggingInterface;
 
-typedef struct _PluginManagerInterface
+struct _PluginManagerInterface
 {
     size_t (*GetUnloadedPluginList)(String *strs, size_t sizeofStrs);
     size_t (*GetLoadedPluginList)(String *strs, size_t sizeofStrs);
     WsBool (*Load)(const char* fileName);
     WsBool (*Unload)(const char *fileName);
     WsBool (*Reload)(const char *fileName);
-} PluginManagerInterface;
+};
+typedef struct _PluginManagerInterface PluginManagerInterface;
 
-typedef struct _EventInterface
+struct _EventInterface
 {
     size_t (*GetEventList)(String *strs, size_t sizeofStrs);
     WsBool (*IsEventAvailable)(const char *eventName);
@@ -342,9 +348,10 @@ typedef struct _EventInterface
     void (*UnsubscribeEvent)(const struct _PluginInterface*, WsHandle handle);
 
     WsBool (*IsEventSubscribed)(const struct _PluginInterface*, WsHandle handle);
-} EventInterface;
+};
+typedef struct _EventInterface EventInterface;
 
-typedef struct _HookInterface
+struct _HookInterface
 {
     /*
         Sometime the hook may fail even though a valid handle (non-null) is returned
@@ -356,9 +363,10 @@ typedef struct _HookInterface
     WsBool (*UnhookFunction)(const struct _PluginInterface*, WsHandle handle);
     WsBool (*IsHooked)(void *oldAddress);
     void *(*GetOriginalFunction)(WsHandle);
-} HookInterface;
+};
+typedef struct _HookInterface HookInterface;
 
-typedef struct _MemoryInterface
+struct _MemoryInterface
 {
     /*
         Passing a statically allocated memory address located in a module (EXE/DLL) will return the ImageBase address
@@ -409,10 +417,11 @@ typedef struct _MemoryInterface
         Returns null if the function fails to find the signature
     */
     void *(*FindSignature)(const AllocationInfo *allocInfo, const char *sig);
-} MemoryInterface;
+};
+typedef struct _MemoryInterface MemoryInterface;
 
 /* for accessing specialized extensions specific to certain applications or games*/
-typedef struct _ExtensionInterface
+struct _ExtensionInterface
 {
     /* Extensions are named using the $EXTENSION_$VERSION string format 
        where $EXTENSION is the extension name, 
@@ -426,9 +435,10 @@ typedef struct _ExtensionInterface
     WsBool (*IsExtensionAvailable)(const char *name);
     WsExtension (*GetExtension)(const struct _PluginInterface*, const char *name);
     WsBool (*ReleaseExtension)(const struct _PluginInterface*, WsExtension ext);
-} ExtensionInterface;
+};
+typedef struct _ExtensionInterface ExtensionInterface;
 
-typedef struct _PluginInterface
+struct _PluginInterface
 {
     const void * const data;
 
@@ -440,8 +450,8 @@ typedef struct _PluginInterface
     const HookInterface * const hook;
     const MemoryInterface * const memory;
 
-} PluginInterface;
-
+};
+typedef struct _PluginInterface PluginInterface;
 
 #ifdef __cplusplus
 }
@@ -466,7 +476,7 @@ class InterfaceEx
     void ThrowIfNotInitialized() const
     {
         if(pi == 0)
-            throw std::runtime_error("PluginInterfaceEx has not been initialized properly");
+            throw "PluginInterfaceEx has not been initialized properly";
     }
 
 public:
@@ -491,37 +501,25 @@ public:
     {
         this->pi = pi;
     }
-
-    operator const PluginInterface*() const 
-    {
-        ThrowIfNotInitialized();
-
-        return pi;
-    }
-
-    operator const PluginInterface&() const
-    {
-        ThrowIfNotInitialized();
-
-        return *pi;
-    }
 };
-class SystemInterfaceEx : public virtual InterfaceEx
-{
-    std::string GetDirectory(size_t(*GetDirFunc)(String*)) const 
-    {
-        size_t len = GetDirFunc(0);
-        String *s = AllocString(len, 1);
-        GetDirFunc(s);
-        std::string res = s->buffer;
-        FreeString1(s);
 
-        return res;
-    }
+static std::string GetDirectory(size_t(*GetDirFunc)(String*))  
+{
+    size_t len = GetDirFunc(0);
+    String *s = AllocString(len, 1);
+    GetDirFunc(s);
+    std::string res = s->buffer;
+    FreeString1(s);
+
+    return res;
+}
+
+class SystemInterfaceEx : public InterfaceEx
+{
 
 public:
     SystemInterfaceEx(){}
-    SystemInterfaceEx(const PluginInterface *pi) : InterfaceEx(pi) {}
+    SystemInterfaceEx(const PluginInterface *p) : InterfaceEx(p) {}
     virtual ~SystemInterfaceEx(){}
 
     void* GetModuleHandle() const
@@ -550,14 +548,14 @@ public:
         GetPluginInterface().system->RaiseException(exceptionMsg.c_str(), dataUnused);
     }
 
-    std::string GetAboutMessage() const
+    /*std::string GetAboutMessage() const
     {
         return GetPluginInterface().system->GetAboutMessage();
     }
     unsigned int GetVersion() const
     {
         return GetPluginInterface().system->GetVersion();
-    }
+    }*/
 
 
     std::string  GetBaseDirectory() const
@@ -575,11 +573,11 @@ public:
     }
 };
 
-class LoggingInterfaceEx : public virtual InterfaceEx
+class LoggingInterfaceEx : public InterfaceEx
 {
 public:
     LoggingInterfaceEx(){}
-    LoggingInterfaceEx(const PluginInterface *pi) : InterfaceEx(pi){}
+    LoggingInterfaceEx(const PluginInterface *p) : InterfaceEx(p){}
     virtual ~LoggingInterfaceEx(){}
 
     LogLevel Quiet() const
@@ -621,27 +619,28 @@ public:
     }
 };
 
-class PluginManagerInterfaceEx : public virtual InterfaceEx
+static std::vector<std::string> GetPluginList(size_t (*GetPList)(String *strs, size_t sizeofStrs)) const
+{
+    size_t sizeOfStrs = GetPList(0, 0);
+    String *strs = AllocString(2048, sizeOfStrs);
+    GetPList(strs, sizeOfStrs);
+
+    std::vector<std::string> results;
+    results.resize(sizeOfStrs);
+    std::transform(strs, strs+sizeOfStrs, results.begin(), &StringToStdString);
+
+    FreeString(strs, sizeOfStrs);
+
+    return results;
+}
+
+class PluginManagerInterfaceEx : public InterfaceEx
 {
 
-    std::vector<std::string> GetPluginList(size_t (*GetPList)(String *strs, size_t sizeofStrs)) const
-    {
-        size_t sizeOfStrs = GetPList(0, 0);
-        String *strs = AllocString(2048, sizeOfStrs);
-        GetPList(strs, sizeOfStrs);
-
-        std::vector<std::string> results;
-        results.resize(sizeOfStrs);
-        std::transform(strs, strs+sizeOfStrs, results.begin(), &StringToStdString);
-
-        FreeString(strs, sizeOfStrs);
-
-        return results;
-    }
 
 public:
     PluginManagerInterfaceEx(){}
-    PluginManagerInterfaceEx(const PluginInterface *pi) : InterfaceEx(pi) {}
+    PluginManagerInterfaceEx(const PluginInterface *p) : InterfaceEx(p) {}
     virtual ~PluginManagerInterfaceEx(){}
 
     std::vector<std::string> GetUnloadedPluginList() const
@@ -667,12 +666,12 @@ public:
     }
 };
 
-class EventInterfaceEx : public virtual InterfaceEx
+class EventInterfaceEx : public InterfaceEx
 {
     
 public:
     EventInterfaceEx(){}
-    EventInterfaceEx(const PluginInterface *pi) : InterfaceEx(pi) {}
+    EventInterfaceEx(const PluginInterface *p) : InterfaceEx(p) {}
     virtual ~EventInterfaceEx(){}
 
     std::vector<std::string> GetEventList() const
@@ -696,10 +695,7 @@ public:
 
     /* all event functions are __cdecl call convention */
     /* returns NULL handle on failure */
-    WsHandle SubscribeEvent(const std::string &eventName, EventFunction eventFunc) const
-    {
-        return GetPluginInterface().event->SubscribeEvent(GetPluginInterfacePtr(), eventName.c_str(), eventFunc);
-    }
+    WsHandle SubscribeEvent(const std::string &eventName, EventFunction eventFunc) const;
 
     /* You do not have to manually remove the event in OnUnload(), 
        the plugin manager will take care of cleaning up events */
@@ -714,11 +710,16 @@ public:
     }
 };
 
-class HookInterfaceEx : public virtual InterfaceEx
+WsHandle EventInterfaceEx::SubscribeEvent(const std::string &eventName, EventFunction eventFunc) const
+{
+    return GetPluginInterface().event->SubscribeEvent(GetPluginInterfacePtr(), eventName.c_str(), eventFunc);
+}
+
+class HookInterfaceEx : public InterfaceEx
 {
 public:
     HookInterfaceEx(){}
-    HookInterfaceEx(const PluginInterface *pi) : InterfaceEx(pi) {}
+    HookInterfaceEx(const PluginInterface *p) : InterfaceEx(p) {}
     virtual ~HookInterfaceEx(){}
 
     WsHandle HookFunction(void *oldAddress, void *newAddress) const
@@ -739,26 +740,16 @@ public:
     }
 };
 
-class MemoryInterfaceEx : public virtual InterfaceEx
+class MemoryInterfaceEx : public InterfaceEx
 {
 public:
     MemoryInterfaceEx(){}
-    MemoryInterfaceEx(const PluginInterface *pi) : InterfaceEx(pi) {}
+    MemoryInterfaceEx(const PluginInterface *p) : InterfaceEx(p) {}
     virtual ~MemoryInterfaceEx(){}
 
-    std::unique_ptr<AllocationInfo> GetAllocationBase(void *addr) const
+    WsBool GetAllocationBase(AllocationInfo *info, void *addr) const
     {
-        std::unique_ptr<AllocationInfo> allocInfo(new AllocationInfo);
-        WsBool isgood = GetPluginInterface().memory->GetAllocationBase(allocInfo.get(), addr);
-        if(isgood)
-        {
-            return allocInfo;
-        }
-        else
-        {
-            allocInfo.reset(0);
-            return allocInfo;
-        }
+        return GetPluginInterface().memory->GetAllocationBase(info, addr);
     }
 
     ProtectionMode VirtualProtect(void *address, size_t size, ProtectionMode newProtection) const
@@ -792,11 +783,11 @@ public:
     }
 };
 
-class ExtensionInterfaceEx : public virtual InterfaceEx
+class ExtensionInterfaceEx : public InterfaceEx
 {
 public:
     ExtensionInterfaceEx(){}
-    ExtensionInterfaceEx(const PluginInterface *pi) : InterfaceEx(pi) {}
+    ExtensionInterfaceEx(const PluginInterface *p) : InterfaceEx(p) {}
     virtual ~ExtensionInterfaceEx(){}
 
     std::vector<std::string> GetExtensionList() const
@@ -818,11 +809,11 @@ public:
     {
         return GetPluginInterface().extension->IsExtensionAvailable(extName.c_str());
     }
-    template<typename T>
+    /*template<typename T>
     T* GetExtension(const std::string &extName) const
     {
         return (T*)GetPluginInterface().extension->GetExtension(GetPluginInterfacePtr(), extName.c_str());
-    }
+    }*/
 
     WsBool ReleaseExtension(WsExtension ext) const
     {
@@ -830,32 +821,39 @@ public:
     }
 };
 
-class PluginInterfaceEx : public virtual InterfaceEx,
-                          public EventInterfaceEx, 
-                          public LoggingInterfaceEx,
-                          public PluginManagerInterfaceEx, 
-                          public SystemInterfaceEx,
-                          public ExtensionInterfaceEx,
-                          public HookInterfaceEx,
-                          public MemoryInterfaceEx
+class PluginInterfaceEx
 {
+
 public:
+    EventInterfaceEx event; 
+    LoggingInterfaceEx logging;
+    PluginManagerInterfaceEx plugin;
+    SystemInterfaceEx system;
+    ExtensionInterfaceEx extension;
+    HookInterfaceEx hook;
+    MemoryInterfaceEx memory;
+
     PluginInterfaceEx(){}
 
-    PluginInterfaceEx(const PluginInterface *pi) : 
-        InterfaceEx(pi), 
-        EventInterfaceEx(pi),
-        LoggingInterfaceEx(pi),
-        PluginManagerInterfaceEx(pi),
-        SystemInterfaceEx(pi),
-        ExtensionInterfaceEx(pi),
-        HookInterfaceEx(pi),
-        MemoryInterfaceEx(pi)
+    PluginInterfaceEx(const PluginInterface *p) : 
+        event(p),
+        logging(p),
+        plugin(p),
+        system(p),
+        extension(p),
+        hook(p),
+        memory(p)
         {}
 
-    PluginInterfaceEx &operator=(const PluginInterface *pi)
+    PluginInterfaceEx &operator=(const PluginInterface *p)
     {
-        this->SetPluginInterface(pi);
+        event.SetPluginInterface(p);
+        logging.SetPluginInterface(p);
+        plugin.SetPluginInterface(p);
+        system.SetPluginInterface(p);
+        extension.SetPluginInterface(p);
+        hook.SetPluginInterface(p);
+        memory.SetPluginInterface(p);
         return *this;
     }
 };

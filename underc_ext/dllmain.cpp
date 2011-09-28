@@ -3,12 +3,16 @@
 #include <string>
 #include <sstream>
 
+#include "binding.h"
+
 #pragma comment(lib, "underc.lib")
 
 AXF_EXTENSION_DESCRIPTION(1, OnInitExtension, "UnderC Custom Plugin Loader", "Hunter", "Load UnderC with this extension")
 
-static PluginInterfaceEx pi=0;
 static ExtenderInterfaceEx ei=0;
+
+
+void InitBinding();
 
 struct AutoRelease
 {
@@ -68,7 +72,66 @@ static void OnInitExtension(const struct _PluginInterface *p, const struct _Exte
     ss << "UC_HOME=" << pi.GetPluginDirectory();
     std::string uchomevar = ss.str(); // make a copy of it
     putenv(uchomevar.c_str());
-    uc_init(NULL, 0);  
+    uc_init(NULL, 0);
+    uc_include("string");
+    uc_include("vector");
+    uc_include("axf/pluginapi.h");
+
+    InitBinding();
 
     pi.SubscribeEvent(ON_LOAD_PLUGIN, OnLoadPlugin);
 }
+
+#define BIND(ret, arg, func) uc_import(ret " " NAMESPACE #func arg, &axf::func)
+void InitBinding()
+{
+    BIND("void*", "()", GetModuleHandle);
+    BIND("ProcessInfo", "()", GetProcessInformation);
+    BIND("void*", "(const std::string&)", GetModuleBase);
+    BIND("void*", "(void *, const std::string &)", GetProcAddress);
+    BIND("void", "(const std::string &exceptionMsg=\"Unknown Exception Raised!\", void *dataUnused=0)", RaiseException);
+    BIND("std::string", "()", GetAboutMessage);
+    BIND("unsigned int", "()", GetVersion);
+    BIND("std::string", "()", GetBaseDirectory);
+    BIND("std::string", "()", GetPluginDirectory);
+    BIND("std::string", "()", GetExtensionDirectory);
+
+    BIND("LogLevel","()",Quiet);
+    BIND("LogLevel","()",Debug);
+    BIND("LogLevel","()",Info);
+    BIND("LogLevel","()",Warn);
+    BIND("LogLevel","()",Error);
+    BIND("void","(const LogLevel)",SetLogLevel);
+    BIND("LogLevel","()",GetLogLevel);
+    BIND("void","(const std::string &s)",Log);
+    BIND("void","(const LogLevel type, const std::string &s)",Log2);
+
+
+    BIND("std::vector<std::string>","()",GetUnloadedPluginList);
+    BIND("std::vector<std::string>","()",GetLoadedPluginList);
+    BIND("WsBool","(const std::string &fileName)",LoadPlugin);
+    BIND("WsBool","(const std::string &fileName)",UnloadPlugin);
+    BIND("WsBool","(const std::string &fileName)",ReloadPlugin);
+
+
+    BIND("std::vector<std::string>","()",GetEventList);
+    BIND("WsBool","(const std::string &eventName)",IsEventAvailable);
+    BIND("WsHandle","(const std::string &eventName, EventFunction eventFunc)",SubscribeEvent);
+    BIND("void","(WsHandle handle)",UnsubscribeEvent);
+    BIND("WsBool","(WsHandle handle)",IsEventSubscribed);
+
+
+    BIND("WsHandle","(void *oldAddress, void *newAddress)",HookFunction);
+    BIND("WsBool","(WsHandle handle)",UnhookFunction);
+    BIND("WsBool","(void *oldAddress)",IsHooked);
+    BIND("void *","(WsHandle handle)",GetOriginalFunction);
+    BIND("ProtectionMode","(void *address, size_t size, ProtectionMode newProtection)",VirtualProtect);
+    BIND("void *","(const AllocationInfo *allocInfo, const char *sig)",FindSignature);
+    BIND("std::vector<std::string>","()",GetExtensionList);
+    BIND("WsBool","(const std::string &extName)",IsExtensionAvailable);
+    BIND("WsHandle", "(const std::string &extName)", GetExtension);
+    BIND("WsBool","(WsExtension ext)",ReleaseExtension);
+
+
+}
+
