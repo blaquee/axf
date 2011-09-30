@@ -457,16 +457,12 @@ typedef struct _PluginInterface PluginInterface;
 #ifdef __cplusplus
 
 #include <string>
-#include <vector>
+#include <list>
 #include <algorithm>
 #include <iostream>
 
 namespace axf
 {
-    inline std::string StringToStdString(const String &s)
-    {
-        return s.buffer;
-    }
     // underc does not like function pointer inside class because 
     // it gets confused with operator()
     inline std::string GetDirectory(PluginInterface *pi, size_t(*GetDirFunc)(PluginInterface*, String*)) 
@@ -481,16 +477,17 @@ namespace axf
     }
 } //namespace axf
     
-// underc workaround, GetPluginList in namespace doesnt play properly with std::vector<>
-inline std::vector<std::string> GetPluginList(PluginInterface *pi, size_t(*GetPList)(PluginInterface*, String *, size_t)) 
+// std::list is used here because std::vector is broken in underc!
+// underc workaround, GetPluginList in namespace doesnt play properly with std::list<>
+inline std::list<std::string> GetPluginList(PluginInterface *pi, size_t(*GetPList)(PluginInterface*, String *, size_t)) 
 {
     size_t sizeOfStrs = GetPList(pi, 0, 0);
     String *strs = AllocString(2048, sizeOfStrs);
     GetPList(pi, strs, sizeOfStrs);
 
-    std::vector<std::string> results;
-    results.resize(sizeOfStrs);
-    std::transform(strs, strs+sizeOfStrs, results.begin(), &axf::StringToStdString);
+    std::list<std::string> results;
+    for(unsigned int i=0;i < sizeOfStrs; ++i)
+        results.push_back(strs[i].buffer);
 
     FreeString(strs, sizeOfStrs);
 
@@ -599,12 +596,12 @@ std::string  GetExtensionDirectory()
 
 
 
-std::vector<std::string> GetUnloadedPluginList() 
+std::list<std::string> GetUnloadedPluginList() 
 {
     return GetPluginList(pi, pi_GetUnloadedPluginList);
 }
 
-std::vector<std::string> GetLoadedPluginList() 
+std::list<std::string> GetLoadedPluginList() 
 {
     return GetPluginList(pi, pi_GetLoadedPluginList);
 }
@@ -625,16 +622,16 @@ std::vector<std::string> GetLoadedPluginList()
 
 
 
- std::vector<std::string>  GetEventList() 
+std::list<std::string>  GetEventList() 
 {
     size_t sizeOfStrs = pi_GetEventList(pi, 0, 0);
     String *strs = AllocString(2048, sizeOfStrs);
     pi_GetEventList(pi, strs, sizeOfStrs);
 
-    std::vector<std::string> results;
-    results.resize(sizeOfStrs);
-    std::transform(strs, strs+sizeOfStrs, results.begin(), &axf::StringToStdString);
-
+    std::list<std::string> results;
+    for(unsigned int i=0;i < sizeOfStrs; ++i)
+        results.push_back(strs[i].buffer);
+        
     FreeString(strs, sizeOfStrs);
 
     return results;
@@ -724,15 +721,15 @@ WsBool GetAllocationBase(AllocationInfo *allocInfo, void *addr)
 
 
 
- std::vector<std::string>  GetExtensionList() 
+ std::list<std::string>  GetExtensionList() 
 {
     size_t sizeOfStrs = pi_GetExtensionList(pi, 0, 0);
     String *strs = AllocString(2048, sizeOfStrs);
     pi_GetExtensionList(pi, strs, sizeOfStrs);
 
-    std::vector<std::string> results;
-    results.resize(sizeOfStrs);
-    std::transform(strs, strs+sizeOfStrs, results.begin(), &axf::StringToStdString);
+    std::list<std::string> results;
+    for(unsigned int i=0;i < sizeOfStrs; ++i)
+        results.push_back(strs[i].buffer);
 
     FreeString(strs, sizeOfStrs);
 

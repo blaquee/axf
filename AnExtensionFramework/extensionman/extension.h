@@ -58,8 +58,9 @@ typedef struct _PluginData
     WsHandle clientHandle; /* the extension sets this to non-null to signify a successful load */
     void(*OnPluginUnload)(WsHandle); /* the unload routine set by the extension, the WsHandle argument is the clientHandle */
 
+    PluginInterface *pluginInterface;
     const char *name;
-    const char *extension;
+    const char *fileExtension;
     WsBool (*GetBinary)(struct _PluginData*, PluginBinary*);
     void (*ReleaseBinary)(PluginBinary*);
 } PluginData;

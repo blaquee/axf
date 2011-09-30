@@ -12,18 +12,18 @@
 //        FOREACH_I(i, int val, vec) { vec[i] += val; }
 //        FOREACH_I_AUTO(i, val, vec) { vec[i] += val; } 
 
-template <class C, class T>
+template <class C>
     struct _ForEach2 
     {
         typename C::iterator m_it,m_end;
         _ForEach2(C& c) { m_it = c.begin(); m_end = c.end(); }
-        T &deref() { return *m_it; }
+        auto deref() { return *m_it; }
         bool hasnext() { return m_it != m_end; }
         void next() { ++m_it; }
     };
  
 template <>
-    struct _ForEach2<char*, char>
+    struct _ForEach2<char*>
     {
         char *m_it;
         char *m_end;
@@ -34,7 +34,7 @@ template <>
         void next() { ++m_it; }
     };
 template <>
-    struct _ForEach2<const char*, char>
+    struct _ForEach2<const char*>
     {
         const char *m_it;
         const char *m_end;
@@ -46,19 +46,19 @@ template <>
     };
     
 #define FOREACH(v,c) \
-for(_ForEach2<typeof(c), typeof(c[0])> _fe(c);_fe.hasnext();) \
+for(_ForEach2<typeof(c)> _fe(c);_fe.hasnext();) \
 for(bool b=true;_fe.hasnext();_fe.next(), b=true) \
 for(v = _fe.deref();b;b=false)
 
-#define FOREACH_AUTO(v,c) FOREACH(typeof(c[0]) v, c)
+#define FOREACH_AUTO(v,c) FOREACH(auto v, c)
 
 #define FOREACH_I(i,v,c) \
-for(_ForEach2<typeof(c), typeof(c[0])> _fe(c);_fe.hasnext();) \
+for(_ForEach2<typeof(c)> _fe(c);_fe.hasnext();) \
 for(unsigned int i = 0;_fe.hasnext();++i) \
 for(bool b=true;_fe.hasnext();++i, _fe.next(), b=true) \
 for(v = _fe.deref();b;b=false)
 
-#define FOREACH_I_AUTO(i,v,c) FOREACH_I(i, typeof(c[0]) v, c)
+#define FOREACH_I_AUTO(i,v,c) FOREACH_I(i, auto v, c)
 
 /*
 template <class C, class T>

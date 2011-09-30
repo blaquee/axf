@@ -70,7 +70,8 @@ static void OnLoadPlugin(void *arg)
 {
     PluginData *pluginData = (PluginData*)arg;
     PluginBinary script;
-    if(pluginData->GetBinary(pluginData, &script))
+    if(std::string(pluginData->fileExtension) == "cpp" && 
+        pluginData->GetBinary(pluginData, &script))
     {
         AutoRelease rls(*pluginData, script);
         UnderCPlugin *ucp = new UnderCPlugin;
@@ -101,7 +102,7 @@ static void OnLoadPlugin(void *arg)
 
         // HACK: make OnInit executable, underc doesnt make the returned buffer executable!
         pi.VirtualProtect(ucp->pluginDesc.OnInit, 200, PROTECTION_MODE_EXECUTE_READWRITE);
-        ucp->pluginDesc.OnInit(pi.GetPluginInterfacePtr());
+        ucp->pluginDesc.OnInit(pluginData->pluginInterface);
         pluginData->clientVersion = ucp->pluginDesc.pluginapiVersion; // required for version compatibility
         pluginData->clientHandle = (WsHandle)ucp; //dummy value, the plugin manager requires the clientHandle to be non null
         pluginData->OnPluginUnload = OnUnloadPlugin; // make the custom plugin unloadable

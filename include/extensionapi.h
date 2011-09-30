@@ -140,8 +140,9 @@ typedef struct _PluginData
     void(*OnPluginUnload)(WsHandle); 
 
     /* PluginData inputs */
+    PluginInterface *pluginInterface;
     const char *name;
-    const char *extension;
+    const char *fileExtension;
     WsBool (*GetBinary)(struct _PluginData*, PluginBinary*);
     void (*ReleaseBinary)(PluginBinary*);
 } PluginData;

@@ -84,7 +84,8 @@ void CustomPlugin::OnInit()
     pluginData.clientHandle = 0;
     pluginData.OnPluginUnload = 0;
 
-    pluginData.extension = ext.c_str();
+    pluginData.pluginInterface = &GetPluginInterface();
+    pluginData.fileExtension = ext.c_str();
     pluginData.name = GetFileName().c_str();
     pluginData.GetBinary = &PluginData_GetBinary;
     pluginData.ReleaseBinary = &PluginData_ReleaseBinary;
@@ -99,7 +100,7 @@ void CustomPlugin::OnInit()
         }
         else
         {
-            throw WSException(std::string("Custom Plugin did not specify clientHandle: ") + GetFileName());
+            throw WSException(std::string("Could not find an appropriate extension to load this Custom Plugin or extension did not specify a valid clientHandle: ") + GetFileName());
         }
     }
     catch(const WSException &ex)

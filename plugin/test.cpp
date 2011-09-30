@@ -1,6 +1,6 @@
 #include <windows.h>
 #include <string>
-#include <iostream>
+#include <sstream>
 #include <foreach.h>
 #include <axf/pluginapi.h>
 
@@ -25,17 +25,36 @@ namespace test
 {
 PluginInterfaceEx pi;
 
+template<class T>
+inline void PrintList(const char *title, const T l)
+{
+    pi.Log(title);
+    FOREACH_AUTO(itm, l)
+        pi.Log(itm);
+    pi.Log("\n");
+}
+
 void OnInit(const PluginInterface *p)
 {
     pi = p;
     
     std::string s = "It works!";
+    std::ostringstream ss; ss << "\n";
     FOREACH_AUTO(c, s)
     {
-        std::cout << c << std::endl;
+        ss << c << "\n";
     }
-    std::cout << "PluginInterface*: " << pi << std::endl;
-    std::cout << pi.GetAboutMessage() << std::endl;
+    pi.Log(ss.str());
+    
+    std::ostringstream ss2;
+    ss2 << "PluginInterface*: " << pi << std::endl;
+    ss2 << pi.GetAboutMessage() << std::endl;
+    pi.Log(ss2.str());
+    
+    PrintList("Unloaded List:", pi.GetUnloadedPluginList());
+    PrintList("Loaded List:", pi.GetLoadedPluginList());
+    PrintList("Event List:", pi.GetEventList());
+    PrintList("Extension List:", pi.GetExtensionList());
 }
 
 }
