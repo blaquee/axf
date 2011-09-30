@@ -398,6 +398,9 @@ WsBool ReleaseExtension_Plugin(const struct _PluginInterface *pi, WsExtension ex
 
 WsHandle HookFunction_Plugin(const struct _PluginInterface *pi, void *oldAddress, void *newAddress)
 {
+    if(oldAddress == 0 || newAddress == 0)
+        return 0;
+
     Lock lock(&PluginManager::mutex);
     try
     {
