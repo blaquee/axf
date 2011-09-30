@@ -9,8 +9,10 @@
 
 AXF_EXTENSION_DESCRIPTION(1, OnInitExtension, "UnderC Custom Plugin Loader", "Hunter", "Load UnderC with this extension")
 
-static ExtenderInterfaceEx ei=0;
+static const char *EMPTY_STRING="";
 
+static PluginInterfaceEx pi=0;
+static ExtenderInterfaceEx ei=0;
 
 void InitBinding();
 
@@ -25,9 +27,43 @@ struct AutoRelease
     }
 };
 
+struct UnderCPlugin
+{
+    PluginDescription pluginDesc;
+    UnderCPlugin()
+    {
+        pluginDesc.version = 0; 
+        pluginDesc.pluginapiVersion = 0; 
+
+        pluginDesc.OnInit = 0;
+
+        pluginDesc.name = 0;
+        pluginDesc.author = 0; 
+        pluginDesc.about = 0;  
+
+        pluginDesc.reserved0 = 0;
+        pluginDesc.reserved1 = 0; 
+    }
+    void DumpPluginInfo()
+    {
+        std::stringstream ss;
+        ss << "version: " << pluginDesc.version << std::endl
+            << "pluginapiVersion: " << pluginDesc.pluginapiVersion << std::endl
+            << "OnInit: " << pluginDesc.OnInit << std::endl
+            << "name: " << pluginDesc.name << std::endl
+            << "author: " << pluginDesc.author << std::endl
+            << "about: " << pluginDesc.about << std::endl
+            << "reserved0: " << pluginDesc.reserved0 << std::endl
+            << "reserved1: " << pluginDesc.reserved1 << std::endl;
+        pi.Log(ss.str());
+    }
+};
+
 static void OnUnloadPlugin(WsHandle clientHandle)
 {
-    // no clean up required
+    UnderCPlugin *ucp = (UnderCPlugin*)clientHandle;
+    delete (void*)(ucp->pluginDesc.OnInit); // HACK: underc allocates it using new/delete
+    delete ucp;
 }
 
 static void OnLoadPlugin(void *arg)
@@ -37,15 +73,38 @@ static void OnLoadPlugin(void *arg)
     if(pluginData->GetBinary(pluginData, &script))
     {
         AutoRelease rls(*pluginData, script);
+        UnderCPlugin *ucp = new UnderCPlugin;
+        uc_init_ref("PluginDescription", "__plugindesc__", &ucp->pluginDesc);
         if(!uc_exec((char*)script.data))
         {
+            delete ucp;
+
             char errorMsg[1024];
-            uc_error(errorMsg, sizeof(errorMsg));
+            uc_error(errorMsg, sizeof(errorMsg)-2);
             errorMsg[sizeof(errorMsg)-1] = 0; // cap it just in case
             pi.RaiseException(errorMsg);
         }
-        pluginData->clientVersion = AXF_API_VERSION; // required for version compatibility
-        pluginData->clientHandle = (WsHandle)1; //dummy value, the plugin manager requires the clientHandle to be non null
+        ucp->pluginDesc.name = ucp->pluginDesc.name ? ucp->pluginDesc.name : EMPTY_STRING;
+        ucp->pluginDesc.author = ucp->pluginDesc.author ? ucp->pluginDesc.author : EMPTY_STRING;
+        ucp->pluginDesc.about = ucp->pluginDesc.about ? ucp->pluginDesc.about : EMPTY_STRING;
+
+        ucp->DumpPluginInfo();
+        if(ucp->pluginDesc.pluginapiVersion > pi.GetVersion())
+        {
+            delete ucp;
+            pi.RaiseException("AXF is too old");
+        }
+        if(ucp->pluginDesc.OnInit == 0)
+        {
+            delete ucp;
+            pi.RaiseException("Custom Plugin has not exported OnInit");
+        }
+
+        // HACK: make OnInit executable, underc doesnt make the returned buffer executable!
+        pi.VirtualProtect(ucp->pluginDesc.OnInit, 200, PROTECTION_MODE_EXECUTE_READWRITE);
+        ucp->pluginDesc.OnInit(pi.GetPluginInterfacePtr());
+        pluginData->clientVersion = ucp->pluginDesc.pluginapiVersion; // required for version compatibility
+        pluginData->clientHandle = (WsHandle)ucp; //dummy value, the plugin manager requires the clientHandle to be non null
         pluginData->OnPluginUnload = OnUnloadPlugin; // make the custom plugin unloadable
     }
 }
@@ -73,8 +132,6 @@ static void OnInitExtension(const struct _PluginInterface *p, const struct _Exte
     std::string uchomevar = ss.str(); // make a copy of it
     putenv(uchomevar.c_str());
     uc_init(NULL, 0);
-    uc_include("string");
-    uc_include("vector");
     uc_include("axf/pluginapi.h");
 
     InitBinding();
@@ -82,56 +139,62 @@ static void OnInitExtension(const struct _PluginInterface *p, const struct _Exte
     pi.SubscribeEvent(ON_LOAD_PLUGIN, OnLoadPlugin);
 }
 
+// exported to underc as pi_FuncName()
 #define BIND(ret, arg, func) uc_import(ret " " NAMESPACE #func arg, &axf::func)
 void InitBinding()
 {
-    BIND("void*", "()", GetModuleHandle);
-    BIND("ProcessInfo", "()", GetProcessInformation);
-    BIND("void*", "(const std::string&)", GetModuleBase);
-    BIND("void*", "(void *, const std::string &)", GetProcAddress);
-    BIND("void", "(const std::string &exceptionMsg=\"Unknown Exception Raised!\", void *dataUnused=0)", RaiseException);
-    BIND("std::string", "()", GetAboutMessage);
-    BIND("unsigned int", "()", GetVersion);
-    BIND("std::string", "()", GetBaseDirectory);
-    BIND("std::string", "()", GetPluginDirectory);
-    BIND("std::string", "()", GetExtensionDirectory);
+    // system
+    BIND("void*", "(PluginInterface *pi)", GetModuleHandle);
+    BIND("void", "(PluginInterface *pi)", GetProcessInformation);
+    BIND("void*", "(PluginInterface *pi, const char *name)", GetModuleBase);
+    BIND("void*", "(PluginInterface *pi, void *base, const char *name)", GetProcAddress);
+    BIND("void", "(PluginInterface *pi, const char *exceptionMsg, void *dataUnused)", RaiseException);
+    BIND("const char*", "(PluginInterface *pi)", GetAboutMessage);
+    BIND("unsigned int", "(PluginInterface *pi)", GetVersion);
+    BIND("size_t", "(PluginInterface *pi, String *s)", GetBaseDirectory);
+    BIND("size_t", "(PluginInterface *pi, String *s)", GetPluginDirectory);
+    BIND("size_t", "(PluginInterface *pi, String *s)", GetExtensionDirectory);
 
-    BIND("LogLevel","()",Quiet);
-    BIND("LogLevel","()",Debug);
-    BIND("LogLevel","()",Info);
-    BIND("LogLevel","()",Warn);
-    BIND("LogLevel","()",Error);
-    BIND("void","(const LogLevel)",SetLogLevel);
-    BIND("LogLevel","()",GetLogLevel);
-    BIND("void","(const std::string &s)",Log);
-    BIND("void","(const LogLevel type, const std::string &s)",Log2);
+    // log
+    BIND("LogLevel","(PluginInterface *pi)",Quiet);
+    BIND("LogLevel","(PluginInterface *pi)",Debug);
+    BIND("LogLevel","(PluginInterface *pi)",Info);
+    BIND("LogLevel","(PluginInterface *pi)",Warn);
+    BIND("LogLevel","(PluginInterface *pi)",Error);
+    BIND("void","(PluginInterface *pi, const LogLevel)",SetLogLevel);
+    BIND("LogLevel","(PluginInterface *pi)",GetLogLevel);
+    BIND("void","(PluginInterface *pi, const char *s)",Log);
+    BIND("void","(PluginInterface *pi, const LogLevel type, const char *s)",Log2);
 
+    // manager
+    BIND("size_t","(PluginInterface *pi, String *strs, size_t numOfStrs)",GetUnloadedPluginList);
+    BIND("size_t","(PluginInterface *pi, String *strs, size_t numOfStrs)",GetLoadedPluginList);
+    BIND("WsBool","(PluginInterface *pi, const char *fileName)",LoadPlugin);
+    BIND("WsBool","(PluginInterface *pi, const char *fileName)",UnloadPlugin);
+    BIND("WsBool","(PluginInterface *pi, const char *fileName)",ReloadPlugin);
 
-    BIND("std::vector<std::string>","()",GetUnloadedPluginList);
-    BIND("std::vector<std::string>","()",GetLoadedPluginList);
-    BIND("WsBool","(const std::string &fileName)",LoadPlugin);
-    BIND("WsBool","(const std::string &fileName)",UnloadPlugin);
-    BIND("WsBool","(const std::string &fileName)",ReloadPlugin);
+    // event
+    BIND("size_t","(PluginInterface *pi, String *strs, size_t numOfStrs)",GetEventList);
+    BIND("WsBool","(PluginInterface *pi, const char *eventName)",IsEventAvailable);
+    BIND("WsHandle","(PluginInterface *pi, const char *eventName, EventFunction eventFunc)",SubscribeEvent);
+    BIND("void","(PluginInterface *pi, WsHandle handle)",UnsubscribeEvent);
+    BIND("WsBool","(PluginInterface *pi, WsHandle handle)",IsEventSubscribed);
 
+    // hook
+    BIND("WsHandle","(PluginInterface *pi, void *oldAddress, void *newAddress)",HookFunction);
+    BIND("WsBool","(PluginInterface *pi, WsHandle handle)",UnhookFunction);
+    BIND("WsBool","(PluginInterface *pi, void *oldAddress)",IsHooked);
+    BIND("void *","(PluginInterface *pi, WsHandle handle)",GetOriginalFunction);
 
-    BIND("std::vector<std::string>","()",GetEventList);
-    BIND("WsBool","(const std::string &eventName)",IsEventAvailable);
-    BIND("WsHandle","(const std::string &eventName, EventFunction eventFunc)",SubscribeEvent);
-    BIND("void","(WsHandle handle)",UnsubscribeEvent);
-    BIND("WsBool","(WsHandle handle)",IsEventSubscribed);
-
-
-    BIND("WsHandle","(void *oldAddress, void *newAddress)",HookFunction);
-    BIND("WsBool","(WsHandle handle)",UnhookFunction);
-    BIND("WsBool","(void *oldAddress)",IsHooked);
-    BIND("void *","(WsHandle handle)",GetOriginalFunction);
-    BIND("ProtectionMode","(void *address, size_t size, ProtectionMode newProtection)",VirtualProtect);
-    BIND("void *","(const AllocationInfo *allocInfo, const char *sig)",FindSignature);
-    BIND("std::vector<std::string>","()",GetExtensionList);
-    BIND("WsBool","(const std::string &extName)",IsExtensionAvailable);
-    BIND("WsHandle", "(const std::string &extName)", GetExtension);
-    BIND("WsBool","(WsExtension ext)",ReleaseExtension);
-
-
+    // memory
+    BIND("WsBool", "(PluginInterface *pi, AllocationInfo *allocInfo, void *addr)", GetAllocationBase);
+    BIND("ProtectionMode","(PluginInterface *pi, void *address, size_t size, ProtectionMode newProtection)",VirtualProtect);
+    BIND("void *","(PluginInterface *pi, const AllocationInfo *allocInfo, const char *sig)",FindSignature);
+    
+    // extension
+    BIND("size_t","(PluginInterface *pi, String *strs, size_t numOfStrs)",GetExtensionList);
+    BIND("WsBool","(PluginInterface *pi, const char *extName)",IsExtensionAvailable);
+    BIND("WsHandle", "(PluginInterface *pi, const char *extName)", GetExtension);
+    BIND("WsBool","(PluginInterface *pi, WsExtension ext)",ReleaseExtension);
 }
 

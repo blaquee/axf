@@ -10,7 +10,6 @@
 #endif
 
 // globals
-PluginInterfaceEx pi=0;
 
 namespace axf
 {
@@ -27,94 +26,91 @@ static std::string GetDirectory(size_t(*GetDirFunc)(String*))
     return res;
 }
 
- void* _STDCALL_ GetModuleHandle() 
+ void* _STDCALL_ GetModuleHandle(PluginInterface *pi) 
 {
-    return pi.GetPluginInterface().system->GetModuleHandle(pi.GetPluginInterfacePtr());
+    return pi->system->GetModuleHandle(pi);
 }
- ProcessInfo _STDCALL_ GetProcessInformation() 
+ void _STDCALL_ GetProcessInformation(PluginInterface *pi, ProcessInfo *pInfo) 
 {
-    ProcessInfo info;
-    pi.GetPluginInterface().system->GetProcessInformation(&info);
-
-    return info;
+    pi->system->GetProcessInformation(pInfo);
 }
- void * _STDCALL_ GetModuleBase(const std::string &name) 
+ void * _STDCALL_ GetModuleBase(PluginInterface *pi, const char *name) 
 {
-    return pi.GetPluginInterface().system->GetModuleBase(name.c_str());
+    return pi->system->GetModuleBase(name);
 }
- void * _STDCALL_ GetProcAddress(void *base, const std::string &name) 
+ void * _STDCALL_ GetProcAddress(PluginInterface *pi, void *base, const char *name) 
 {
-    return pi.GetPluginInterface().system->GetProcAddress(base, name.c_str());
+    return pi->system->GetProcAddress(base, name);
 }
 
 /* Throws an exception to the plugin manager, dataUnused must be set to NULL for now  */
- void _STDCALL_ RaiseException(const std::string &exceptionMsg="Unknown Exception Raised!", void *dataUnused=0) 
+ void _STDCALL_ RaiseException(PluginInterface *pi, const char *exceptionMsg, void *dataUnused) 
 {
-    pi.GetPluginInterface().system->RaiseException(exceptionMsg.c_str(), dataUnused);
+    pi->system->RaiseException(exceptionMsg, dataUnused);
 }
 
- std::string _STDCALL_ GetAboutMessage() 
+const char* _STDCALL_ GetAboutMessage(PluginInterface *pi) 
 {
-    return pi.GetPluginInterface().system->GetAboutMessage();
+    return pi->system->GetAboutMessage();
 }
- unsigned int _STDCALL_ GetVersion() 
+ unsigned int _STDCALL_ GetVersion(PluginInterface *pi) 
 {
-    return pi.GetPluginInterface().system->GetVersion();
+    return pi->system->GetVersion();
 }
 
 
- std::string  _STDCALL_ GetBaseDirectory() 
+size_t  _STDCALL_ GetBaseDirectory(PluginInterface *pi, String *s) 
 {
-    return GetDirectory(pi.GetPluginInterface().system->GetBaseDirectory);
+    return pi->system->GetBaseDirectory(s);
         
 }
- std::string _STDCALL_ GetPluginDirectory() 
+size_t _STDCALL_ GetPluginDirectory(PluginInterface *pi, String *s) 
 {
-    return GetDirectory(pi.GetPluginInterface().system->GetPluginDirectory);
+    return pi->system->GetPluginDirectory(s);
 }
- std::string _STDCALL_ GetExtensionDirectory() 
+size_t _STDCALL_ GetExtensionDirectory(PluginInterface *pi, String *s) 
 {
-    return GetDirectory(pi.GetPluginInterface().system->GetExtensionDirectory);
-}
-
-
-
- LogLevel _STDCALL_ Quiet() 
-{
-    return pi.GetPluginInterface().log->Quiet;
-}
- LogLevel _STDCALL_ Debug() 
-{
-    return pi.GetPluginInterface().log->Debug;
-}
- LogLevel _STDCALL_ Info() 
-{
-    return pi.GetPluginInterface().log->Info;
-}
- LogLevel _STDCALL_ Warn() 
-{
-    return pi.GetPluginInterface().log->Warn;
-}
- LogLevel _STDCALL_ Error() 
-{
-    return pi.GetPluginInterface().log->Error;
+    return pi->system->GetExtensionDirectory(s);
 }
 
- void _STDCALL_ SetLogLevel(const LogLevel type) 
+
+
+ LogLevel _STDCALL_ Quiet(PluginInterface *pi) 
 {
-    pi.GetPluginInterface().log->SetLogLevel(pi.GetPluginInterfacePtr(), type);
+    return pi->log->Quiet;
 }
- LogLevel _STDCALL_ GetLogLevel() 
+ LogLevel _STDCALL_ Debug(PluginInterface *pi) 
 {
-    return pi.GetPluginInterface().log->GetLogLevel(pi.GetPluginInterfacePtr());
+    return pi->log->Debug;
 }
- void _STDCALL_ Log(const std::string &s) 
+ LogLevel _STDCALL_ Info(PluginInterface *pi) 
 {
-    pi.GetPluginInterface().log->Log(pi.GetPluginInterfacePtr(), s.c_str());
+    return pi->log->Info;
 }
- void _STDCALL_ Log2(const LogLevel type, const std::string &s) 
+ LogLevel _STDCALL_ Warn(PluginInterface *pi) 
 {
-    pi.GetPluginInterface().log->Log2(pi.GetPluginInterfacePtr(), type, s.c_str());
+    return pi->log->Warn;
+}
+ LogLevel _STDCALL_ Error(PluginInterface *pi) 
+{
+    return pi->log->Error;
+}
+
+ void _STDCALL_ SetLogLevel(PluginInterface *pi, const LogLevel type) 
+{
+    pi->log->SetLogLevel(pi, type);
+}
+ LogLevel _STDCALL_ GetLogLevel(PluginInterface *pi) 
+{
+    return pi->log->GetLogLevel(pi);
+}
+ void _STDCALL_ Log(PluginInterface *pi, const char *s) 
+{
+    pi->log->Log(pi, s);
+}
+ void _STDCALL_ Log2(PluginInterface *pi, const LogLevel type, const char *s) 
+{
+    pi->log->Log2(pi, type, s);
 }
 
 
@@ -136,105 +132,85 @@ static std::vector<std::string> GetPluginList(size_t (*GetPList)(String *strs, s
 
 
 
- std::vector<std::string> _STDCALL_ GetUnloadedPluginList() 
+ size_t _STDCALL_ GetUnloadedPluginList(PluginInterface *pi, String *strs, size_t numOfStrs) 
 {
-    return GetPluginList(pi.GetPluginInterface().manager->GetUnloadedPluginList);
+    return pi->manager->GetUnloadedPluginList(strs, numOfStrs);
 }
- std::vector<std::string>  _STDCALL_ GetLoadedPluginList() 
+size_t  _STDCALL_ GetLoadedPluginList(PluginInterface *pi, String *strs, size_t numOfStrs) 
 {
-    return GetPluginList(pi.GetPluginInterface().manager->GetLoadedPluginList);
-}
-
- WsBool _STDCALL_ LoadPlugin(const std::string &fileName) 
-{
-    return pi.GetPluginInterface().manager->Load(fileName.c_str());
-}
- WsBool _STDCALL_ UnloadPlugin(const std::string &fileName) 
-{
-    return pi.GetPluginInterface().manager->Unload(fileName.c_str());
-}
- WsBool _STDCALL_ ReloadPlugin(const std::string &fileName) 
-{
-    return pi.GetPluginInterface().manager->Reload(fileName.c_str());
+    return pi->manager->GetLoadedPluginList(strs, numOfStrs);
 }
 
-
-
-
- std::vector<std::string> _STDCALL_ GetEventList() 
+ WsBool _STDCALL_ LoadPlugin(PluginInterface *pi, const char *fileName) 
 {
-    size_t sizeOfStrs = pi.GetPluginInterface().event->GetEventList(0, 0);
-    String *strs = AllocString(2048, sizeOfStrs);
-    pi.GetPluginInterface().event->GetEventList(strs, sizeOfStrs);
-
-    std::vector<std::string> results;
-    results.resize(sizeOfStrs);
-    std::transform(strs, strs+sizeOfStrs, results.begin(), &StringToStdString);
-
-    FreeString(strs, sizeOfStrs);
-
-    return results;
+    return pi->manager->Load(fileName);
 }
- WsBool _STDCALL_ IsEventAvailable(const std::string &eventName) 
+ WsBool _STDCALL_ UnloadPlugin(PluginInterface *pi, const char *fileName) 
 {
-    return pi.GetPluginInterface().event->IsEventAvailable(eventName.c_str());
+    return pi->manager->Unload(fileName);
+}
+ WsBool _STDCALL_ ReloadPlugin(PluginInterface *pi, const char *fileName) 
+{
+    return pi->manager->Reload(fileName);
+}
+
+
+
+
+size_t _STDCALL_ GetEventList(PluginInterface *pi, String *strs, size_t numOfStrs) 
+{
+    return pi->event->GetEventList(strs, numOfStrs);
+}
+ WsBool _STDCALL_ IsEventAvailable(PluginInterface *pi, const char *eventName) 
+{
+    return pi->event->IsEventAvailable(eventName);
 }
 
 /* all event functions are __cdecl call convention */
 /* returns NULL handle on failure */
- WsHandle _STDCALL_ SubscribeEvent(const std::string &eventName, EventFunction eventFunc) 
+ WsHandle _STDCALL_ SubscribeEvent(PluginInterface *pi, const char *eventName, EventFunction eventFunc) 
 {
-    return pi.GetPluginInterface().event->SubscribeEvent(pi.GetPluginInterfacePtr(), eventName.c_str(), eventFunc);
+    return pi->event->SubscribeEvent(pi, eventName, eventFunc);
 }
 
 /* You do not have to manually remove the event in OnUnload(), 
     the plugin manager will take care of cleaning up events */
- void _STDCALL_ UnsubscribeEvent(WsHandle handle) 
+ void _STDCALL_ UnsubscribeEvent(PluginInterface *pi, WsHandle handle) 
 {
-    pi.GetPluginInterface().event->UnsubscribeEvent(pi.GetPluginInterfacePtr(), handle);
+    pi->event->UnsubscribeEvent(pi, handle);
 }
 
- WsBool _STDCALL_ IsEventSubscribed(WsHandle handle) 
+ WsBool _STDCALL_ IsEventSubscribed(PluginInterface *pi, WsHandle handle) 
 {
-    return pi.GetPluginInterface().event->IsEventSubscribed(pi.GetPluginInterfacePtr(), handle);
+    return pi->event->IsEventSubscribed(pi, handle);
 }
 
- WsHandle _STDCALL_ HookFunction(void *oldAddress, void *newAddress) 
+ WsHandle _STDCALL_ HookFunction(PluginInterface *pi, void *oldAddress, void *newAddress) 
 {
-    return pi.GetPluginInterface().hook->HookFunction(pi.GetPluginInterfacePtr(), oldAddress, newAddress);
+    return pi->hook->HookFunction(pi, oldAddress, newAddress);
 }
- WsBool _STDCALL_ UnhookFunction(WsHandle handle) 
+ WsBool _STDCALL_ UnhookFunction(PluginInterface *pi, WsHandle handle) 
 {
-    return pi.GetPluginInterface().hook->UnhookFunction(pi.GetPluginInterfacePtr(), handle);
+    return pi->hook->UnhookFunction(pi, handle);
 }
- WsBool _STDCALL_ IsHooked(void *oldAddress) 
+ WsBool _STDCALL_ IsHooked(PluginInterface *pi, void *oldAddress) 
 {
-    return pi.GetPluginInterface().hook->IsHooked(oldAddress);
+    return pi->hook->IsHooked(oldAddress);
 }
- void * _STDCALL_ GetOriginalFunction(WsHandle handle) 
+ void * _STDCALL_ GetOriginalFunction(PluginInterface *pi, WsHandle handle) 
 {
-    return pi.GetPluginInterface().hook->GetOriginalFunction(handle);
+    return pi->hook->GetOriginalFunction(handle);
 }
 
 
-    /*std::unique_ptr<AllocationInfo> GetAllocationBase(void *addr) const
-    {
-        std::unique_ptr<AllocationInfo> allocInfo(new AllocationInfo);
-        WsBool isgood = pi.GetPluginInterface().memory->GetAllocationBase(allocInfo.get(), addr);
-        if(isgood)
-        {
-            return allocInfo;
-        }
-        else
-        {
-            allocInfo.reset(0);
-            return allocInfo;
-        }
-    }*/
-
- ProtectionMode _STDCALL_ VirtualProtect(void *address, size_t size, ProtectionMode newProtection) 
+WsBool _STDCALL_ GetAllocationBase(PluginInterface *pi, AllocationInfo *allocInfo, void *addr)
 {
-    return pi.GetPluginInterface().memory->VirtualProtect(address, size, newProtection);
+    return pi->memory->GetAllocationBase(allocInfo, addr);
+}
+
+ProtectionMode _STDCALL_ VirtualProtect(PluginInterface *pi, void *address, size_t size, ProtectionMode newProtection) 
+{
+    return pi->memory->VirtualProtect(address, size, newProtection);
 }
 
 /*
@@ -257,42 +233,32 @@ static std::vector<std::string> GetPluginList(size_t (*GetPList)(String *strs, s
 
     Returns null if the function fails to find the signature
 */
- void * _STDCALL_ FindSignature(const AllocationInfo *allocInfo, const char *sig) 
+ void * _STDCALL_ FindSignature(PluginInterface *pi, const AllocationInfo *allocInfo, const char *sig) 
 {
-    return pi.GetPluginInterface().memory->FindSignature(allocInfo, sig);
+    return pi->memory->FindSignature(allocInfo, sig);
 }
 
 
 
- std::vector<std::string> _STDCALL_ GetExtensionList() 
+size_t _STDCALL_ GetExtensionList(PluginInterface *pi, String *strs, size_t numOfStrs) 
 {
-    size_t sizeOfStrs = pi.GetPluginInterface().extension->GetExtensionList(0, 0);
-    String *strs = AllocString(2048, sizeOfStrs);
-    pi.GetPluginInterface().extension->GetExtensionList(strs, sizeOfStrs);
-
-    std::vector<std::string> results;
-    results.resize(sizeOfStrs);
-    std::transform(strs, strs+sizeOfStrs, results.begin(), &StringToStdString);
-
-    FreeString(strs, sizeOfStrs);
-
-    return results;
+    return pi->extension->GetExtensionList(strs, numOfStrs);
 }
 
- WsBool  _STDCALL_ IsExtensionAvailable(const std::string &extName) 
+ WsBool  _STDCALL_ IsExtensionAvailable(PluginInterface *pi, const char *extName) 
 {
-    return pi.GetPluginInterface().extension->IsExtensionAvailable(extName.c_str());
+    return pi->extension->IsExtensionAvailable(extName);
 }
 
 
-WsHandle GetExtension(const std::string &extName) 
+WsHandle GetExtension(PluginInterface *pi, const char *extName) 
 {
-    return pi.GetPluginInterface().extension->GetExtension(pi.GetPluginInterfacePtr(), extName.c_str());
+    return pi->extension->GetExtension(pi, extName);
 }
 
- WsBool _STDCALL_ ReleaseExtension(WsExtension ext) 
+ WsBool _STDCALL_ ReleaseExtension(PluginInterface *pi, WsExtension ext) 
 {
-    return pi.GetPluginInterface().extension->ReleaseExtension(pi.GetPluginInterfacePtr(), ext);
+    return pi->extension->ReleaseExtension(pi, ext);
 }
 
 } //namespace axf

@@ -4,9 +4,29 @@
 #include <foreach.h>
 #include <axf/pluginapi.h>
 
-std::string s = "lol";
-FOREACH_AUTO(c, s)
+// 1. declare our plugin version
+unsigned int VERSION = 1;
+
+// 2. declare our entry point
+namespace test { void OnInit(const PluginInterface *pi); } 
+
+// 3. export the plugin description
+AXF_PLUGIN_DESCRIPTION(VERSION, test::OnInit, "Test Plugin", "Hunter", "Testing this plugin")
+
+
+// 4. implementation, etc
+namespace test 
 {
-    std::cout << c << std::endl;
+
+void OnInit(const PluginInterface *pi)
+{
+    std::string s = "It works!";
+    FOREACH_AUTO(c, s)
+    {
+        std::cout << c << std::endl;
+    }
+    std::cout << "PluginInterface*: " << pi << std::endl;
 }
-std::cout << pi_GetBaseDirectory() << std::endl;
+
+}
+

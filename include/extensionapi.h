@@ -59,8 +59,8 @@ extern "C"
 
 typedef struct _ExtensionDescription
 {
-    unsigned int version:32;  /* the version of this plugin */
-    unsigned int pluginapiVersion:32; /* the version of the pluginapi this plugin is using, must be AXF_API_VERSION (was AXF_PLUGIN_VERSION) */
+    unsigned int version;  /* the version of this plugin */
+    unsigned int pluginapiVersion; /* the version of the pluginapi this plugin is using, must be AXF_API_VERSION (was AXF_PLUGIN_VERSION) */
 
     void (*OnInit)(const struct _PluginInterface*, const struct _ExtenderInterface*);  /* entry point, cdecl only */
 
