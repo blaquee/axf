@@ -39,12 +39,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <windows.h>
 #endif
 
-#ifdef __cplusplus
-#include <string>
-#include <vector>
-#include <algorithm>
-#endif
-
 #include <stdlib.h>
 #include <stdarg.h>
 
@@ -166,14 +160,7 @@ static void OnFinalize(void *unused);
 /* Data Types                                                           */
 /************************************************************************/
 
-typedef void (*EventFunction)(void*);
-struct WsHandle__{int unused;}; 
-typedef struct WsHandle__ *WsHandle;
-typedef int WsBool;
-typedef unsigned int ProtectionMode;
-
-typedef const WsHandle LogLevel;
-typedef WsHandle WsExtension;
+#include "pluginapi_datatype.h"
 
 enum {WSFALSE=0, WSTRUE=1};
 
@@ -234,7 +221,7 @@ static String* AllocString(size_t strlength, size_t strSize)
 static void FreeString(String* delStr, size_t strSize)
 {
     size_t i;
-    if(delStr!=NULL)
+    if(delStr!=0)
     {
         for(i = 0; i < strSize; i ++)
         {
@@ -469,6 +456,317 @@ typedef struct _PluginInterface PluginInterface;
 
 #ifdef __cplusplus
 
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <iostream>
+
+namespace axf
+{
+    inline std::string StringToStdString(const String &s)
+    {
+        return s.buffer;
+    }
+    // underc does not like function pointer inside class because 
+    // it gets confused with operator()
+    inline std::string GetDirectory(PluginInterface *pi, size_t(*GetDirFunc)(PluginInterface*, String*)) 
+    {
+        size_t len = GetDirFunc(pi, 0);
+        String *s = AllocString(len, 1);
+        GetDirFunc(pi, s);
+        std::string res = s->buffer;
+        FreeString1(s);
+
+        return res;
+    }
+} //namespace axf
+    
+// underc workaround, GetPluginList in namespace doesnt play properly with std::vector<>
+inline std::vector<std::string> GetPluginList(PluginInterface *pi, size_t(*GetPList)(PluginInterface*, String *, size_t)) 
+{
+    size_t sizeOfStrs = GetPList(pi, 0, 0);
+    String *strs = AllocString(2048, sizeOfStrs);
+    GetPList(pi, strs, sizeOfStrs);
+
+    std::vector<std::string> results;
+    results.resize(sizeOfStrs);
+    std::transform(strs, strs+sizeOfStrs, results.begin(), &axf::StringToStdString);
+
+    FreeString(strs, sizeOfStrs);
+
+    return results;
+}
+
+class PluginInterfaceEx
+{
+    PluginInterface *pi;
+    
+public:
+PluginInterfaceEx() : pi(0) {}
+PluginInterfaceEx(PluginInterface *p) : pi(p){}
+PluginInterface *GetPluginInterfacePtr() { return pi; }
+PluginInterface &GetPluginInterface() { return *pi; }
+
+void*  GetModuleHandle() 
+{
+    return pi_GetModuleHandle(pi);
+}
+ProcessInfo  GetProcessInformation() 
+{
+    ProcessInfo info;
+    pi_GetProcessInformation(pi, &info);
+
+    return info;
+}
+ void *  GetModuleBase(const std::string &name) 
+{
+    return pi_GetModuleBase(pi, name.c_str());
+}
+ void *  GetProcAddress(void *base, const std::string &name) 
+{
+    return pi_GetProcAddress(pi, base, name.c_str());
+}
+
+/* Throws an exception to the plugin manager, dataUnused must be set to NULL for now  */
+ void  RaiseException(const std::string &exceptionMsg="Unknown Exception Raised!", void *dataUnused=0) 
+{
+    pi_RaiseException(pi, exceptionMsg.c_str(), dataUnused);
+}
+
+ std::string  GetAboutMessage() 
+{
+    return pi_GetAboutMessage(pi);
+}
+ unsigned int  GetVersion() 
+{
+    return pi_GetVersion(pi);
+}
+
+
+std::string   GetBaseDirectory() 
+{
+    return axf::GetDirectory(pi, pi_GetBaseDirectory);
+        
+}
+std::string  GetPluginDirectory() 
+{
+    return axf::GetDirectory(pi, pi_GetPluginDirectory);
+}
+std::string  GetExtensionDirectory() 
+{
+    return axf::GetDirectory(pi, pi_GetExtensionDirectory);
+}
+
+
+
+ LogLevel  Quiet() 
+{
+    return pi_Quiet(pi);
+}
+ LogLevel  Debug() 
+{
+    return pi_Debug(pi);
+}
+ LogLevel  Info() 
+{
+    return pi_Info(pi);
+}
+ LogLevel  Warn() 
+{
+    return pi_Warn(pi);
+}
+ LogLevel  Error() 
+{
+    return pi_Error(pi);
+}
+
+ void  SetLogLevel(const LogLevel type) 
+{
+    pi_SetLogLevel(pi, type);
+}
+ LogLevel  GetLogLevel() 
+{
+    return pi_GetLogLevel(pi);
+}
+ void  Log(const std::string &s) 
+{
+    pi_Log(pi, s.c_str());
+}
+ void  Log2(const LogLevel type, const std::string &s) 
+{
+    pi_Log2(pi, type, s.c_str());
+}
+
+
+
+std::vector<std::string> GetUnloadedPluginList() 
+{
+    return GetPluginList(pi, pi_GetUnloadedPluginList);
+}
+
+std::vector<std::string> GetLoadedPluginList() 
+{
+    return GetPluginList(pi, pi_GetLoadedPluginList);
+}
+
+ WsBool  LoadPlugin(const std::string &fileName) 
+{
+    return pi_LoadPlugin(pi, fileName.c_str());
+}
+ WsBool  UnloadPlugin(const std::string &fileName) 
+{
+    return pi_UnloadPlugin(pi, fileName.c_str());
+}
+ WsBool  ReloadPlugin(const std::string &fileName) 
+{
+    return pi_ReloadPlugin(pi, fileName.c_str());
+}
+
+
+
+
+ std::vector<std::string>  GetEventList() 
+{
+    size_t sizeOfStrs = pi_GetEventList(pi, 0, 0);
+    String *strs = AllocString(2048, sizeOfStrs);
+    pi_GetEventList(pi, strs, sizeOfStrs);
+
+    std::vector<std::string> results;
+    results.resize(sizeOfStrs);
+    std::transform(strs, strs+sizeOfStrs, results.begin(), &axf::StringToStdString);
+
+    FreeString(strs, sizeOfStrs);
+
+    return results;
+}
+ WsBool  IsEventAvailable(const std::string &eventName) 
+{
+    return pi_IsEventAvailable(pi, eventName.c_str());
+}
+
+/* all event functions must be wrapped with _native_stub(func) */
+/* returns NULL handle on failure */
+/* HACK: eventFunc's type is EventFunction but underc doesn't accept it, hence the workaround */
+WsHandle  SubscribeEvent(const std::string &eventName, void *eventFunc) 
+{
+    // HACK: underc _native_stub returns a non-executable code buffer
+    // we make it executable by calling VirtualProtect
+    VirtualProtect(eventFunc, 200, PROTECTION_MODE_EXECUTE_READWRITE);
+    return pi_SubscribeEvent(pi, eventName.c_str(), (EventFunction)eventFunc);
+}
+
+/* You do not have to manually remove the event in OnUnload(), 
+    the plugin manager will take care of cleaning up events */
+ void  UnsubscribeEvent(WsHandle handle) 
+{
+    pi_UnsubscribeEvent(pi, handle);
+}
+
+ WsBool  IsEventSubscribed(WsHandle handle) 
+{
+    return pi_IsEventSubscribed(pi, handle);
+}
+
+
+
+ WsHandle  HookFunction(void *oldAddress, void *newAddress) 
+{
+    return pi_HookFunction(pi, oldAddress, newAddress);
+}
+ WsBool  UnhookFunction(WsHandle handle) 
+{
+    return pi_UnhookFunction(pi, handle);
+}
+ WsBool  IsHooked(void *oldAddress) 
+{
+    return pi_IsHooked(pi, oldAddress);
+}
+ void *  GetOriginalFunction(WsHandle handle) 
+{
+    return pi_GetOriginalFunction(pi, handle);
+}
+
+
+WsBool GetAllocationBase(AllocationInfo *allocInfo, void *addr)
+{
+    return pi_GetAllocationBase(pi, &allocInfo, addr);
+}
+
+ ProtectionMode  VirtualProtect(void *address, size_t size, ProtectionMode newProtection) 
+{
+    return pi_VirtualProtect(pi, address, size, newProtection);
+}
+
+/*
+    The signature is formatted as following:
+    1. Groups of 2 characters long hexcode separated by arbitrary amount whitespaces (tab, spacebar, newline)
+    2. a 2 characters question mark (??) represents a wildcard, it will be ignored during the scanning
+
+    Examples:
+    char *sig = "1F 01 00 B9 FF ?? AB ?? ?? ?? ?? EF";
+
+    // you can also use newlines
+    char *sig = "1F 01 00 B9 FA ?? AB ?? ?? ?? ?? EF"
+                "2F 02 00 B9 FB ?? AB ?? ?? ?? ?? EF"
+                "3F 03 00 B9 FC ?? AB ?? ?? ?? ?? EF";
+
+    // you can also use irregular spacing, mixed with tabs
+    char *sig = "1F      01 00 B9 FA ??     AB ?? ?? ?? ?? EF" 
+                "2F 02 00 B9 FB ?? AB ?? ??     ?? ?? EF"
+                "3F 03 00 B9 FC ?? AB               ?? ?? ?? ?? EF";
+
+    Returns null if the function fails to find the signature
+*/
+ void *  FindSignature(const AllocationInfo &allocInfo, const char *sig) 
+{
+    return pi_FindSignature(pi, &allocInfo, sig);
+}
+
+
+
+ std::vector<std::string>  GetExtensionList() 
+{
+    size_t sizeOfStrs = pi_GetExtensionList(pi, 0, 0);
+    String *strs = AllocString(2048, sizeOfStrs);
+    pi_GetExtensionList(pi, strs, sizeOfStrs);
+
+    std::vector<std::string> results;
+    results.resize(sizeOfStrs);
+    std::transform(strs, strs+sizeOfStrs, results.begin(), &axf::StringToStdString);
+
+    FreeString(strs, sizeOfStrs);
+
+    return results;
+}
+
+ WsBool  IsExtensionAvailable(const std::string &extName) 
+{
+    return pi_IsExtensionAvailable(pi, extName.c_str());
+}
+
+
+WsHandle GetExtension(const std::string &extName) 
+{
+    return pi_GetExtension(pi, extName.c_str());
+}
+
+ WsBool  ReleaseExtension(WsExtension ext) 
+{
+    return pi_ReleaseExtension(pi, ext);
+}
+
+} //class PluginInterfaceEx
+
+std::ostream &operator<<(std::ostream &os, const PluginInterfaceEx &p)
+{
+    os << p.GetPluginInterfacePtr();
+    return os;
+}
+std::ostream &operator<<(std::ostream &os, const PluginInterfaceEx *p)
+{
+    os << p->GetPluginInterfacePtr();
+    return os;
+}
 
 #endif /* #ifdef __cplusplus */
 

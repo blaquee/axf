@@ -1,8 +1,6 @@
 -------------
 HIGH Priority
 -------------
-expose Pluginapi to underc plugins to make it useful
-
 add config file for AXF
 add ON_EXTENSION_LOADED event (to solve the load order issue for extension plugins)
 
@@ -39,3 +37,5 @@ add underC plugin loader extension (underC is a script version of C++, use ON_LO
 The current method of loading plugin is flawed because it checks the version after the plugin has been loaded
 Solution: Subscribe to the ON_INIT_EVENT, force plugin writers to return the plugin version only in OnLoad()
 plugins can also return author and description info
+
+expose Pluginapi to underc plugins to make it useful

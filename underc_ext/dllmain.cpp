@@ -131,9 +131,11 @@ static void OnInitExtension(const struct _PluginInterface *p, const struct _Exte
     std::string uchomevar = ss.str(); // make a copy of it
     putenv(uchomevar.c_str());
     uc_init(NULL, 0);
-    uc_include("axf/pluginapi.h");
+    uc_include("stdlib.h");
+    uc_include("axf/pluginapi_datatype.h");
 
     InitBinding();
+    uc_include("axf/pluginapi.h");
 
     pi.SubscribeEvent(ON_LOAD_PLUGIN, OnLoadPlugin);
 }
@@ -143,57 +145,57 @@ static void OnInitExtension(const struct _PluginInterface *p, const struct _Exte
 void InitBinding()
 {
     // system
-    BIND("void*", "(PluginInterface *pi)", GetModuleHandle);
-    BIND("void", "(PluginInterface *pi)", GetProcessInformation);
-    BIND("void*", "(PluginInterface *pi, const char *name)", GetModuleBase);
-    BIND("void*", "(PluginInterface *pi, void *base, const char *name)", GetProcAddress);
-    BIND("void", "(PluginInterface *pi, const char *exceptionMsg, void *dataUnused)", RaiseException);
-    BIND("const char*", "(PluginInterface *pi)", GetAboutMessage);
-    BIND("unsigned int", "(PluginInterface *pi)", GetVersion);
-    BIND("size_t", "(PluginInterface *pi, String *s)", GetBaseDirectory);
-    BIND("size_t", "(PluginInterface *pi, String *s)", GetPluginDirectory);
-    BIND("size_t", "(PluginInterface *pi, String *s)", GetExtensionDirectory);
+    BIND("void*", "(struct _PluginInterface *pi)", GetModuleHandle);
+    BIND("void", "(struct _PluginInterface *pi, struct _ProcessInfo *pInfo)", GetProcessInformation);
+    BIND("void*", "(struct _PluginInterface *pi, const char *name)", GetModuleBase);
+    BIND("void*", "(struct _PluginInterface *pi, void *base, const char *name)", GetProcAddress);
+    BIND("void", "(struct _PluginInterface *pi, const char *exceptionMsg, void *dataUnused)", RaiseException);
+    BIND("const char*", "(struct _PluginInterface *pi)", GetAboutMessage);
+    BIND("unsigned int", "(struct _PluginInterface *pi)", GetVersion);
+    BIND("size_t", "(struct _PluginInterface *pi, struct _String *s)", GetBaseDirectory);
+    BIND("size_t", "(struct _PluginInterface *pi, struct _String *s)", GetPluginDirectory);
+    BIND("size_t", "(struct _PluginInterface *pi, struct _String *s)", GetExtensionDirectory);
 
     // log
-    BIND("LogLevel","(PluginInterface *pi)",Quiet);
-    BIND("LogLevel","(PluginInterface *pi)",Debug);
-    BIND("LogLevel","(PluginInterface *pi)",Info);
-    BIND("LogLevel","(PluginInterface *pi)",Warn);
-    BIND("LogLevel","(PluginInterface *pi)",Error);
-    BIND("void","(PluginInterface *pi, const LogLevel)",SetLogLevel);
-    BIND("LogLevel","(PluginInterface *pi)",GetLogLevel);
-    BIND("void","(PluginInterface *pi, const char *s)",Log);
-    BIND("void","(PluginInterface *pi, const LogLevel type, const char *s)",Log2);
+    BIND("LogLevel","(struct _PluginInterface *pi)",Quiet);
+    BIND("LogLevel","(struct _PluginInterface *pi)",Debug);
+    BIND("LogLevel","(struct _PluginInterface *pi)",Info);
+    BIND("LogLevel","(struct _PluginInterface *pi)",Warn);
+    BIND("LogLevel","(struct _PluginInterface *pi)",Error);
+    BIND("void","(struct _PluginInterface *pi, const LogLevel)",SetLogLevel);
+    BIND("LogLevel","(struct _PluginInterface *pi)",GetLogLevel);
+    BIND("void","(struct _PluginInterface *pi, const char *s)",Log);
+    BIND("void","(struct _PluginInterface *pi, const LogLevel type, const char *s)",Log2);
 
     // manager
-    BIND("size_t","(PluginInterface *pi, String *strs, size_t numOfStrs)",GetUnloadedPluginList);
-    BIND("size_t","(PluginInterface *pi, String *strs, size_t numOfStrs)",GetLoadedPluginList);
-    BIND("WsBool","(PluginInterface *pi, const char *fileName)",LoadPlugin);
-    BIND("WsBool","(PluginInterface *pi, const char *fileName)",UnloadPlugin);
-    BIND("WsBool","(PluginInterface *pi, const char *fileName)",ReloadPlugin);
+    BIND("size_t","(struct _PluginInterface *pi, struct _String *strs, size_t numOfStrs)",GetUnloadedPluginList);
+    BIND("size_t","(struct _PluginInterface *pi, struct _String *strs, size_t numOfStrs)",GetLoadedPluginList);
+    BIND("WsBool","(struct _PluginInterface *pi, const char *fileName)",LoadPlugin);
+    BIND("WsBool","(struct _PluginInterface *pi, const char *fileName)",UnloadPlugin);
+    BIND("WsBool","(struct _PluginInterface *pi, const char *fileName)",ReloadPlugin);
 
     // event
-    BIND("size_t","(PluginInterface *pi, String *strs, size_t numOfStrs)",GetEventList);
-    BIND("WsBool","(PluginInterface *pi, const char *eventName)",IsEventAvailable);
-    BIND("WsHandle","(PluginInterface *pi, const char *eventName, EventFunction eventFunc)",SubscribeEvent);
-    BIND("void","(PluginInterface *pi, WsHandle handle)",UnsubscribeEvent);
-    BIND("WsBool","(PluginInterface *pi, WsHandle handle)",IsEventSubscribed);
+    BIND("size_t","(struct _PluginInterface *pi, struct _String *strs, size_t numOfStrs)",GetEventList);
+    BIND("WsBool","(struct _PluginInterface *pi, const char *eventName)",IsEventAvailable);
+    BIND("WsHandle","(struct _PluginInterface *pi, const char *eventName, EventFunction eventFunc)",SubscribeEvent);
+    BIND("void","(struct _PluginInterface *pi, WsHandle handle)",UnsubscribeEvent);
+    BIND("WsBool","(struct _PluginInterface *pi, WsHandle handle)",IsEventSubscribed);
 
     // hook
-    BIND("WsHandle","(PluginInterface *pi, void *oldAddress, void *newAddress)",HookFunction);
-    BIND("WsBool","(PluginInterface *pi, WsHandle handle)",UnhookFunction);
-    BIND("WsBool","(PluginInterface *pi, void *oldAddress)",IsHooked);
-    BIND("void *","(PluginInterface *pi, WsHandle handle)",GetOriginalFunction);
+    BIND("WsHandle","(struct _PluginInterface *pi, void *oldAddress, void *newAddress)",HookFunction);
+    BIND("WsBool","(struct _PluginInterface *pi, WsHandle handle)",UnhookFunction);
+    BIND("WsBool","(struct _PluginInterface *pi, void *oldAddress)",IsHooked);
+    BIND("void *","(struct _PluginInterface *pi, WsHandle handle)",GetOriginalFunction);
 
     // memory
-    BIND("WsBool", "(PluginInterface *pi, AllocationInfo *allocInfo, void *addr)", GetAllocationBase);
-    BIND("ProtectionMode","(PluginInterface *pi, void *address, size_t size, ProtectionMode newProtection)",VirtualProtect);
-    BIND("void *","(PluginInterface *pi, const AllocationInfo *allocInfo, const char *sig)",FindSignature);
+    BIND("WsBool", "(struct _PluginInterface *pi, struct _AllocationInfo *allocInfo, void *addr)", GetAllocationBase);
+    BIND("ProtectionMode","(struct _PluginInterface *pi, void *address, size_t size, ProtectionMode newProtection)",VirtualProtect);
+    BIND("void *","(struct _PluginInterface *pi, const struct _AllocationInfo *allocInfo, const char *sig)",FindSignature);
     
     // extension
-    BIND("size_t","(PluginInterface *pi, String *strs, size_t numOfStrs)",GetExtensionList);
-    BIND("WsBool","(PluginInterface *pi, const char *extName)",IsExtensionAvailable);
-    BIND("WsHandle", "(PluginInterface *pi, const char *extName)", GetExtension);
-    BIND("WsBool","(PluginInterface *pi, WsExtension ext)",ReleaseExtension);
+    BIND("size_t","(struct _PluginInterface *pi, struct _String *strs, size_t numOfStrs)",GetExtensionList);
+    BIND("WsBool","(struct _PluginInterface *pi, const char *extName)",IsExtensionAvailable);
+    BIND("WsHandle", "(struct _PluginInterface *pi, const char *extName)", GetExtension);
+    BIND("WsBool","(struct _PluginInterface *pi, WsExtension ext)",ReleaseExtension);
 }
 

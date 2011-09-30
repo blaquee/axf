@@ -17,15 +17,19 @@ AXF_PLUGIN_DESCRIPTION(VERSION, test::OnInit, "Test Plugin", "Hunter", "Testing 
 // 4. implementation, etc
 namespace test 
 {
+PluginInterfaceEx pi;
 
-void OnInit(const PluginInterface *pi)
+void OnInit(const PluginInterface *p)
 {
+    pi = p;
+    
     std::string s = "It works!";
     FOREACH_AUTO(c, s)
     {
         std::cout << c << std::endl;
     }
     std::cout << "PluginInterface*: " << pi << std::endl;
+    std::cout << pi.GetAboutMessage() << std::endl;
 }
 
 }
