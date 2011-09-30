@@ -665,9 +665,10 @@ WsHandle  SubscribeEvent(const std::string &eventName, void *eventFunc)
 }
 
 
-
+/* if newAddress is an underc function, it must be wrapped with _native_stub(func) */
  WsHandle  HookFunction(void *oldAddress, void *newAddress) 
 {
+    VirtualProtect(newAddress, 200, PROTECTION_MODE_EXECUTE_READWRITE);
     return pi_HookFunction(pi, oldAddress, newAddress);
 }
  WsBool  UnhookFunction(WsHandle handle) 

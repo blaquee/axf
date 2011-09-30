@@ -25,13 +25,23 @@ namespace test
 {
 PluginInterfaceEx pi;
 
-template<class T>
-inline void PrintList(const char *title, const T l)
+// for some odd reason templating this function will cause a crash when this plugin is loaded twice
+inline void PrintList(const char *title, std::list<std::string> l)
 {
     pi.Log(title);
     FOREACH_AUTO(itm, l)
         pi.Log(itm);
     pi.Log("\n");
+}
+
+// our hook handle, you may use it to get the original function or unhook the function
+WsHandle mbHook=0;
+
+// MessageBoxA requires __stdcall convention
+__stdcall int MyMsgBox(HWND hwnd, char *text, char *caption, int type)
+{
+    pi.Log("you have hook MessageBoxA, but unfortunately underc->c call isnt available for now");
+    return 0;
 }
 
 void OnInit(const PluginInterface *p)
@@ -55,6 +65,15 @@ void OnInit(const PluginInterface *p)
     PrintList("Loaded List:", pi.GetLoadedPluginList());
     PrintList("Event List:", pi.GetEventList());
     PrintList("Extension List:", pi.GetExtensionList());
+    
+    void *mba = pi.GetProcAddress(pi.GetModuleBase("user32.dll"), "MessageBoxA");
+    mbHook = pi.HookFunction(mba, _native_stub(&MyMsgBox)); // all underc functions must be wrapped with _native_stub
+    if(pi.IsHooked(mba))
+        pi.Log("Hooked MessageBoxA, try clicking on the about button");
+    else
+        pi.Log("Failed to hook MessageBoxA");
+        
+    // All hooks, allocated interfaces and subscribed events will be released when you unload this plugin
 }
 
 }
