@@ -4,14 +4,20 @@
 #include <foreach.h>
 #include <axf/pluginapi.h>
 
+// 0. Make sure everything is wrapped in a namespace because 
+//    underc shares names globally (which is a very bad idea!)
+namespace test 
+{ 
 // 1. declare our plugin version
-unsigned int VERSION = 1;
+const unsigned int VERSION = 1;
 
 // 2. declare our entry point
-namespace test { void OnInit(const PluginInterface *pi); } 
+void OnInit(const PluginInterface *pi); 
+
+} // namespace test
 
 // 3. export the plugin description
-AXF_PLUGIN_DESCRIPTION(VERSION, test::OnInit, "Test Plugin", "Hunter", "Testing this plugin")
+AXF_PLUGIN_DESCRIPTION(test::VERSION, test::OnInit, "Test Plugin", "Hunter", "This plugin is used for testing AXF")
 
 
 // 4. implementation, etc
