@@ -432,6 +432,9 @@ struct FindByPointer
 };
 WsBool UnhookFunction_Plugin(const struct _PluginInterface *pi, WsHandle handle)
 {
+    if(pi == 0 || handle == 0)
+        return WSFALSE;
+
     Lock lock(&PluginManager::mutex);
     WsBool unhooked = (Hookah::inst().UnhookFunction(*((HookState*)handle)) ? WSTRUE : WSFALSE);
     lock.Unlock();
@@ -448,10 +451,16 @@ WsBool UnhookFunction_Plugin(const struct _PluginInterface *pi, WsHandle handle)
 }
 WsBool IsHooked_Plugin(void *oldAddress)
 {
+    if(oldAddress == 0)
+        return WSFALSE;
+
     return (Hookah::inst().IsHooked(oldAddress) ? WSTRUE : WSFALSE);
 }
 void *GetOriginalFunction_Plugin(WsHandle handle)
 {
+    if(handle == 0)
+        return 0;
+
     return ((HookState*)handle)->GetOldAddress();
 }
 
