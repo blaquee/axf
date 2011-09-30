@@ -88,7 +88,6 @@ static void OnLoadPlugin(void *arg)
         ucp->pluginDesc.author = ucp->pluginDesc.author ? ucp->pluginDesc.author : EMPTY_STRING;
         ucp->pluginDesc.about = ucp->pluginDesc.about ? ucp->pluginDesc.about : EMPTY_STRING;
 
-        ucp->DumpPluginInfo();
         if(ucp->pluginDesc.pluginapiVersion > pi.GetVersion())
         {
             delete ucp;
