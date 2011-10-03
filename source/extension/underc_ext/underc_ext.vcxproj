@@ -43,7 +43,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
-    <OutDir>$(SolutionDir)extension\</OutDir>
+    <OutDir>$(SolutionDir)build\extension\</OutDir>
+    <IntDir>$(SolutionDir)build\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
