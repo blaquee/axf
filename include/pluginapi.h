@@ -835,6 +835,11 @@ public:
         return (T*)GetPluginInterface().extension->GetExtension(GetPluginInterfacePtr(), extName.c_str());
     }
 
+    WsExtension GetExtension(const std::string &extName) const
+    {
+        return GetPluginInterface().extension->GetExtension(GetPluginInterfacePtr(), extName.c_str());
+    }
+
     WsBool ReleaseExtension(WsExtension ext) const
     {
         return GetPluginInterface().extension->ReleaseExtension(GetPluginInterfacePtr(), ext);
