@@ -35,7 +35,7 @@ void VisitUs()
 #include "pluginapi.h"
 #include <sstream>
 
-AXF_PLUGIN_DESCRIPTION(1, OnInit, "A test plugin", "Hunter", "For testing AXF and PluginInterface")
+AXF_PLUGIN_DESCRIPTION(AXF_MAKE_VERSION(1,0,0), OnInit, "A test plugin", "Hunter", "For testing AXF and PluginInterface")
 
 static PluginInterfaceEx pi;
 

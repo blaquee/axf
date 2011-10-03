@@ -2,7 +2,7 @@
 #include "pluginapi.h"
 #include "ext_memoryinterface.h"
 
-AXF_PLUGIN_DESCRIPTION(1, OnInit, "Trainer Example", "Hunter", "An example plugin")
+AXF_PLUGIN_DESCRIPTION(AXF_MAKE_VERSION(1,0,0), OnInit, "Trainer Example", "Hunter", "An example plugin")
 
 static PluginInterfaceEx pi;
 

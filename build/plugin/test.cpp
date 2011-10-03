@@ -9,7 +9,7 @@
 namespace test 
 { 
 // 1. declare our plugin version
-const unsigned int VERSION = 1;
+const unsigned int VERSION = AXF_MAKE_VERSION(1,0,0);
 
 // 2. declare our entry point
 WsBool OnInit(const PluginInterface *pi); 

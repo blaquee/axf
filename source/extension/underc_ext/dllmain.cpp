@@ -7,7 +7,7 @@
 
 #pragma comment(lib, "underc.lib")
 
-AXF_EXTENSION_DESCRIPTION(1, OnInitExtension, "UnderC Custom Plugin Loader", "Hunter", "Load UnderC with this extension")
+AXF_EXTENSION_DESCRIPTION(AXF_MAKE_VERSION(1,0,0), OnInitExtension, "UnderC Custom Plugin Loader", "Hunter", "Load UnderC with this extension")
 
 static const char *EMPTY_STRING="";
 

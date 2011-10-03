@@ -76,10 +76,23 @@ service = Bug fixes or enhancements to the system, no API changes and will not r
 #define AXF_API_MINOR_VERSION 0
 #define AXF_API_SERVICE_VERSION 0
 
-#define AXF_API_VERSION ( ((AXF_API_MAJOR_VERSION) << (16)) | \
-                             ((AXF_API_MINOR_VERSION) << (8))  |  \
-                              (AXF_API_SERVICE_VERSION) )
+#define AXF_VERSION_MAJOR_MASK 16
+#define AXF_VERSION_MINOR_MASK 8
+#define AXF_VERSION_SERVICE_MASK 0
 
+#define AXF_API_VERSION ( ((AXF_API_MAJOR_VERSION)   << (AXF_VERSION_MAJOR_MASK))   | \
+                          ((AXF_API_MINOR_VERSION)   << (AXF_VERSION_MINOR_MASK))   |  \
+                          ((AXF_API_SERVICE_VERSION) << (AXF_VERSION_SERVICE_MASK)) )
+
+/* Plugins and extensions use this macro to define thier own version */
+#define AXF_MAKE_VERSION(major_, minor_, service_) ( ((major_)   << AXF_VERSION_MAJOR_MASK)   | \
+                                                     ((minor_)   << AXF_VERSION_MINOR_MASK)   | \
+                                                     ((service_) << AXF_VERSION_SERVICE_MASK) )
+
+/* Use these macros to retrieve the major-minor-service versions from an integer */
+#define AXF_GET_MAJOR_VERSION(version_)   (((version_) >> AXF_VERSION_MAJOR_MASK) & 0xff)
+#define AXF_GET_MINOR_VERSION(version_)   (((version_) >> AXF_VERSION_MINOR_MASK) & 0xff)
+#define AXF_GET_SERVICE_VERSION(version_) (((version_) >> AXF_VERSION_SERVICE_MASK) & 0xff)
 
 /************************************************************************/
 /* Primitive Data Types                                                 */

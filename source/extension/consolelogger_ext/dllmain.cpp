@@ -4,7 +4,7 @@
 
 #include "extensionapi.h"
 
-AXF_EXTENSION_DESCRIPTION(1, OnInitExtension, "Console Logger", "Hunter", "Displays the AXF log on a console")
+AXF_EXTENSION_DESCRIPTION(AXF_MAKE_VERSION(1,0,0), OnInitExtension, "Console Logger", "Hunter", "Displays the AXF log on a console")
 
 static PluginInterfaceEx pi;
 static ExtenderInterfaceEx ei;

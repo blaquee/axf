@@ -3,7 +3,7 @@
 #include "extensionapi.h"
 #include "resource.h"
 
-AXF_EXTENSION_DESCRIPTION(1, OnInitExtension, "Windows GUI for AXF", "Hunter", "Another example plugin displaying the features of AXF")
+AXF_EXTENSION_DESCRIPTION(AXF_MAKE_VERSION(1,0,0), OnInitExtension, "Windows GUI for AXF", "Hunter", "Another example plugin displaying the features of AXF")
 
 static PluginInterfaceEx pi;
 static ExtenderInterfaceEx ei;

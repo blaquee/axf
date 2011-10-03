@@ -2,7 +2,7 @@
 #include "extensionapi.h"
 #include "ext_memoryinterface.h"
 
-AXF_EXTENSION_DESCRIPTION(1, OnInitExtension, "Memory Modder", "Hunter", "Modify the memory of your process with this extension")
+AXF_EXTENSION_DESCRIPTION(AXF_MAKE_VERSION(1,0,0), OnInitExtension, "Memory Modder", "Hunter", "Modify the memory of your process with this extension")
 
 
 static PluginInterfaceEx pi;

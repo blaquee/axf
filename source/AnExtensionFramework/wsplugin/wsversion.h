@@ -25,9 +25,13 @@
 #define AXF_MINOR_VERSION 0
 #define AXF_SERVICE_VERSION 0
 
-#define AXF_VERSION ( ((AXF_MAJOR_VERSION) << (16)) | \
-    ((AXF_MINOR_VERSION) << (8))  |  \
-    (AXF_SERVICE_VERSION) )
+#define AXF_VERSION_MAJOR_MASK 16
+#define AXF_VERSION_MINOR_MASK 8
+#define AXF_VERSION_SERVICE_MASK 0
+
+#define AXF_VERSION ( ((AXF_MAJOR_VERSION)   << (AXF_VERSION_MAJOR_MASK))   | \
+                      ((AXF_MINOR_VERSION)   << (AXF_VERSION_MINOR_MASK))   |  \
+                      ((AXF_SERVICE_VERSION) << (AXF_VERSION_SERVICE_MASK)) )
 
 #endif // wsversion_h__
 

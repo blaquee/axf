@@ -13,8 +13,8 @@ using namespace std; // for convinience
 //    underc shares names globally (which is a very bad idea!)
 namespace skeleton 
 { 
-// 1. declare our plugin version, has to be greater than 0
-const unsigned int VERSION = 1;
+// 1. declare our plugin version, has to be greater than 0, see pluginapi.h for more info about the versioning scheme
+const unsigned int VERSION = AXF_MAKE_VERSION(1,0,0);
 
 // 2. declare our entry point
 WsBool OnInit(const PluginInterface *pi); 
