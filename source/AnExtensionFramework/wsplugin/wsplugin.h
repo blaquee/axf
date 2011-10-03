@@ -324,7 +324,7 @@ protected:
     // subclasses must implement these functions
     virtual int Load()=0; // returns the version of the pluginapi
     virtual void Unload()=0;
-    virtual void OnInit()=0; // calls the OnInit function of the plugin
+    virtual WsBool OnInit()=0; // calls the OnInit function of the plugin
 };
 
 
@@ -337,7 +337,7 @@ typedef struct _PluginDescription
     unsigned int version;  /* the version of this plugin */
     unsigned int pluginapiVersion; /* the version of the pluginapi this plugin is using, must be AXF_API_VERSION (was AXF_PLUGIN_VERSION) */
 
-    void (*OnInit)(const struct _PluginInterface*);  /* entry point, cdecl only */
+    WsBool (*OnInit)(const struct _PluginInterface*);  /* entry point, cdecl only */
 
     /* optional info */ 
     const char *name;
@@ -393,7 +393,7 @@ public:
 protected:
     virtual int Load();
     virtual void Unload();
-    virtual void OnInit();
+    virtual WsBool OnInit();
 };
 
 class CustomPlugin : public Plugin
@@ -411,7 +411,7 @@ public:
 protected:
     virtual int Load();
     virtual void Unload();
-    virtual void OnInit();
+    virtual WsBool OnInit();
 };
 
 

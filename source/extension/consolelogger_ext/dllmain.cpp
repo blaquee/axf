@@ -54,7 +54,7 @@ static void ConsoleLogOutput(LogLevel level, const char *s)
     std::cout << title << ": " << s << std::endl;
 }
 
-static void OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
+static WsBool OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
 {
     pi = p;
     ei = e;
@@ -64,5 +64,7 @@ static void OnInitExtension(const struct _PluginInterface *p, const struct _Exte
     ei.AddLoggerAllLevel(pi, &ConsoleLogOutput, 0, 0);
 
     pi.Log(pi.GetAboutMessage());
+
+    return WSTRUE;
 }
 

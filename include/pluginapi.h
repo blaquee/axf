@@ -80,7 +80,18 @@ service = Bug fixes or enhancements to the system, no API changes and will not r
                              ((AXF_API_MINOR_VERSION) << (8))  |  \
                               (AXF_API_SERVICE_VERSION) )
 
-    
+
+/************************************************************************/
+/* Primitive Data Types                                                 */
+/************************************************************************/
+struct WsHandle__{int unused;}; 
+typedef struct WsHandle__ *WsHandle;
+typedef int WsBool;
+typedef unsigned int ProtectionMode;
+
+typedef const WsHandle LogLevel;
+typedef WsHandle WsExtension;
+
 /************************************************************************/
 /* Plugin Description and Events                                        */
 /************************************************************************/
@@ -103,7 +114,8 @@ typedef struct _PluginDescription
     unsigned int version;  /* the version of this plugin */
     unsigned int pluginapiVersion; /* the version of the pluginapi this plugin is using, must be AXF_API_VERSION (was AXF_PLUGIN_VERSION) */
 
-    void (*OnInit)(const struct _PluginInterface*);  /* entry point, cdecl only */
+    /* entry point, cdecl only, return WSTRUE for success, otherwise return WSFALSE*/
+    WsBool (*OnInit)(const struct _PluginInterface*);  
 
     /* optional info */ 
     const char *name;
@@ -135,8 +147,10 @@ typedef struct _PluginDescription
 
 /* called when the plugin gets loaded
  the plugin cannot be loaded if this function isn't implemented 
+
+ return WSTRUE for success, otherwise return WSFALSE
  */
-static void OnInit(const struct _PluginInterface *);
+static WsBool OnInit(const struct _PluginInterface *);
 
 
 /* These functions may be added to the event manager via the EventInterface */
@@ -151,22 +165,15 @@ static void OnFinalize(void *unused);
 /************************************************************************/
 /* Events                                                               */
 /************************************************************************/
+typedef void (*EventFunction)(void*);
+
 /* Event types used for Adding events using EventInterface::AddEvent */
 #define ON_FINALIZE_EVENT "OnFinalize" /* subscribe to this event if you want your plugin to be unloadable*/
 
 
 /************************************************************************/
-/* Data Types                                                           */
+/* Constants                                                            */
 /************************************************************************/
-
-typedef void (*EventFunction)(void*);
-struct WsHandle__{int unused;}; 
-typedef struct WsHandle__ *WsHandle;
-typedef int WsBool;
-typedef unsigned int ProtectionMode;
-
-typedef const WsHandle LogLevel;
-typedef WsHandle WsExtension;
 
 enum {WSFALSE=0, WSTRUE=1};
 
@@ -184,6 +191,10 @@ enum
     PROTECTION_MODE_NOCACHE = 0x200,               
     PROTECTION_MODE_WRITECOMBINE = 0x400             
 };
+
+/************************************************************************/
+/* Data Types                                                           */
+/************************************************************************/
 
 typedef struct _ProcessInfo
 {

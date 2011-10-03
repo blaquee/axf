@@ -26,7 +26,7 @@ typedef struct _ExtensionDescription
     unsigned int version;  /* the version of this plugin */
     unsigned int pluginapiVersion; /* the version of the pluginapi this plugin is using, must be AXF_API_VERSION (was AXF_PLUGIN_VERSION) */
 
-    void (*OnInit)(const struct _PluginInterface*, const struct _ExtenderInterface*);  /* entry point, cdecl only */
+    WsBool (*OnInit)(const struct _PluginInterface*, const struct _ExtenderInterface*);  /* entry point, cdecl only */
 
     /* optional info */ 
     const char *name;
@@ -57,6 +57,7 @@ typedef struct _PluginData
     int clientVersion; /* the extension sets this to AXF_PLUGIN_VERSION */
     WsHandle clientHandle; /* the extension sets this to non-null to signify a successful load */
     void(*OnPluginUnload)(WsHandle); /* the unload routine set by the extension, the WsHandle argument is the clientHandle */
+    WsBool initSuccess; /* set to WSTRUE if OnInit returns WSTRUE, otherwise set to WSFALSE*/
 
     PluginInterface *pluginInterface;
     const char *name;

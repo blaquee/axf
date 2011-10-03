@@ -16,7 +16,7 @@ static PluginInterfaceEx pi;
 // Step 1. Find the address of the health point. In this case its &HEALTH.
 static int HEALTH = 20; //we hack this up to 1000 using the memory interface extension
 
-static void OnInit(const struct _PluginInterface *p)
+static WsBool OnInit(const struct _PluginInterface *p)
 {
     pi = p;
     pi.SubscribeEvent(ON_FINALIZE_EVENT, &OnFinalize);
@@ -59,6 +59,8 @@ static void OnInit(const struct _PluginInterface *p)
     // releasing the extension is optional, the plugin manager will take care of cleaning up
     // but its a good practice to do so
     pi.ReleaseExtension(mem); 
+
+    return WSTRUE;
 }
 
 

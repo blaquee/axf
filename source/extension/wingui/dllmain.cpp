@@ -189,7 +189,7 @@ static void MsgBoxLogOutput(LogLevel level, const char *s)
     MessageBoxA(gHwndDlg,s,LogLevelToText(level),0);
 }
 
-static void OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
+static WsBool OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
 {
     pi = p;
     ei = e;
@@ -199,5 +199,7 @@ static void OnInitExtension(const struct _PluginInterface *p, const struct _Exte
     
     DWORD tid;
     CreateThread(0,0, &DialogThread, 0, 0, &tid);
+
+    return WSTRUE;
 }
 

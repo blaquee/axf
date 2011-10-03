@@ -102,7 +102,7 @@ static void OnLoadPlugin(void *arg)
 
         // HACK: make OnInit executable, underc doesnt make the returned buffer executable!
         pi.VirtualProtect(ucp->pluginDesc.OnInit, 200, PROTECTION_MODE_EXECUTE_READWRITE);
-        ucp->pluginDesc.OnInit(pluginData->pluginInterface);
+        pluginData->initSuccess = ucp->pluginDesc.OnInit(pluginData->pluginInterface);
         pluginData->clientVersion = ucp->pluginDesc.pluginapiVersion; // required for version compatibility
         pluginData->clientHandle = (WsHandle)ucp; //dummy value, the plugin manager requires the clientHandle to be non null
         pluginData->OnPluginUnload = OnUnloadPlugin; // make the custom plugin unloadable
@@ -121,7 +121,7 @@ struct DeinitUnderC
 
 } underc_;
 
-static void OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
+static WsBool OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
 {
     pi = p;
     ei = e;
@@ -139,6 +139,8 @@ static void OnInitExtension(const struct _PluginInterface *p, const struct _Exte
     uc_include("axf/pluginapi.h");
 
     pi.SubscribeEvent(ON_LOAD_PLUGIN, OnLoadPlugin);
+
+    return WSTRUE;
 }
 
 // exported to underc as pi_FuncName()

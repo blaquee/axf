@@ -48,12 +48,14 @@ namespace MemoryInterfaceFactory1
 }
 
 
-static void OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
+static WsBool OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
 {
     pi = p;
     ei = e;
 
     ExtensionFactory memExt = { &MemoryInterfaceFactory1::Create, &MemoryInterfaceFactory1::Destroy };
     ei.AddExtension(MEMORY_INTERFACE_1, &memExt);
+
+    return WSTRUE;;
 }
 

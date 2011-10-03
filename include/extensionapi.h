@@ -62,7 +62,7 @@ typedef struct _ExtensionDescription
     unsigned int version;  /* the version of this plugin */
     unsigned int pluginapiVersion; /* the version of the pluginapi this plugin is using, must be AXF_API_VERSION (was AXF_PLUGIN_VERSION) */
 
-    void (*OnInit)(const struct _PluginInterface*, const struct _ExtenderInterface*);  /* entry point, cdecl only */
+    WsBool (*OnInit)(const struct _PluginInterface*, const struct _ExtenderInterface*);  /* entry point, cdecl only */
 
     /* optional info */ 
     const char *name;
@@ -94,8 +94,10 @@ typedef struct _ExtensionDescription
 
 /* called when the plugin gets loaded
  the plugin cannot be loaded if this function isn't implemented 
+
+ return WSTRUE for success, otherwise return WSFALSE
  */
-static void OnInitExtension(const struct _PluginInterface *, const struct _ExtenderInterface*);
+static WsBool OnInitExtension(const struct _PluginInterface *, const struct _ExtenderInterface*);
 
 
 
@@ -138,6 +140,9 @@ typedef struct _PluginData
 
     /* set this function to non-null to signify a successful load, the WsHandle argument is the clientHandle */
     void(*OnPluginUnload)(WsHandle); 
+
+    /* set to WSTRUE if OnInit returns WSTRUE, otherwise set to WSFALSE*/
+    WsBool initSuccess; 
 
     /* PluginData inputs */
     PluginInterface *pluginInterface;

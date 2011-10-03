@@ -736,7 +736,10 @@ void Plugin::InternalLoad()
     }
     else
     {
-        OnInit();
+        if(OnInit() == WSFALSE)
+        {
+            throw WSException(std::string("Failed to initialize (In OnInit): ") + GetFileName());
+        }
     }
 }
 

@@ -50,10 +50,12 @@ int ExtensionDllPlugin::Load()
         throw WSException("this extension has not exported extdesc");
     }
 }
-void ExtensionDllPlugin::OnInit()
+WsBool ExtensionDllPlugin::OnInit()
 {
     if(extDesc->OnInit)
-        extDesc->OnInit(&GetPluginInterface(), &extender);
+        return extDesc->OnInit(&GetPluginInterface(), &extender);
+    else
+        return WSFALSE;
 }
 void ExtensionDllPlugin::Unload()
 {

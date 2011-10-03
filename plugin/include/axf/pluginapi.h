@@ -137,7 +137,7 @@ typedef struct _PluginDescription PluginDescription;
 /* called when the plugin gets loaded
  the plugin cannot be loaded if this function isn't implemented 
  */
-static void OnInit(const struct _PluginInterface *);
+static WsBool OnInit(const struct _PluginInterface *);
 
 
 /* These functions may be added to the event manager via the EventInterface */

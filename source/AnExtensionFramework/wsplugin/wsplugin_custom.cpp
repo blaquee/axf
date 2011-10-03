@@ -77,7 +77,7 @@ int CustomPlugin::Load()
     return AXF_VERSION;
 }
 
-void CustomPlugin::OnInit()
+WsBool CustomPlugin::OnInit()
 {
     PluginData pluginData;
     pluginData.clientVersion = 0;
@@ -93,10 +93,15 @@ void CustomPlugin::OnInit()
     try 
     {
         PluginManager::inst().FireEventStopIf(ON_LOAD_PLUGIN, pluginData, StopOnClientHandleValid());
+        if(pluginData.initSuccess == WSFALSE)
+        {
+            return WSFALSE;
+        }
         if(pluginData.clientHandle)
         {
             clientHandle = pluginData.clientHandle;
             OnPluginUnload = pluginData.OnPluginUnload;
+            return WSTRUE;
         }
         else
         {
@@ -111,6 +116,8 @@ void CustomPlugin::OnInit()
     {
         throw WSException(std::string("Failed to custom load plugin: ") + GetFileName());
     }
+
+    return WSFALSE;
 }
 
 void CustomPlugin::Unload()

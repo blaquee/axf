@@ -18,7 +18,7 @@ public:
 protected:
     virtual int Load();
     virtual void Unload();
-    virtual void OnInit();
+    virtual WsBool OnInit();
 };
 
 

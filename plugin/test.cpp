@@ -12,7 +12,7 @@ namespace test
 const unsigned int VERSION = 1;
 
 // 2. declare our entry point
-void OnInit(const PluginInterface *pi); 
+WsBool OnInit(const PluginInterface *pi); 
 
 } // namespace test
 
@@ -44,7 +44,7 @@ __stdcall int MyMsgBox(HWND hwnd, char *text, char *caption, int type)
     return 0;
 }
 
-void OnInit(const PluginInterface *p)
+WsBool OnInit(const PluginInterface *p)
 {
     pi = p;
     
@@ -72,7 +72,9 @@ void OnInit(const PluginInterface *p)
         pi.Log("Hooked MessageBoxA, try clicking on the about button");
     else
         pi.Log("Failed to hook MessageBoxA");
-        
+     
+    return WSTRUE;
+    
     // All hooks, allocated interfaces and subscribed events will be released when you unload this plugin
 }
 

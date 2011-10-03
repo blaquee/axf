@@ -45,12 +45,14 @@ int DllPlugin::Load()
     }
 }
 
-void DllPlugin::OnInit()
+WsBool DllPlugin::OnInit()
 {
     if(pluginDesc && pluginDesc->OnInit)
     {
-        pluginDesc->OnInit(&GetPluginInterface());
+        return pluginDesc->OnInit(&GetPluginInterface());
     }
+    else
+        return WSFALSE;
 }
 
 void DllPlugin::Unload()
