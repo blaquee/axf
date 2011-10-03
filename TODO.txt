@@ -1,6 +1,7 @@
 -------------
 HIGH Priority
 -------------
+add a config interface 
 add config file for AXF
 add ON_EXTENSION_LOADED event (to solve the load order issue for extension plugins)
 
@@ -13,9 +14,13 @@ expose EventSystem::FireEventStopIf to pluginapi
 ------------
 MID Priority
 ------------
+add "exported interface description" to extensionapi
+add "imported interface description" to pluginapi
+
 add plugin auto loader with config file
 Fix the memory leak in underc! It leaks like hell when you execute a file!
 
+create an application for packaging AXF by selecting extensions and plugins and changing settings
 ------------
 LOW Priority
 ------------
