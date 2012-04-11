@@ -21,6 +21,7 @@ public:
    static void Write(const Array& array, std::ostream& ostr);
    static void Write(const String& string, std::ostream& ostr);
    static void Write(const Number& number, std::ostream& ostr);
+   static void Write(const Integer& integer, std::ostream& ostr);
    static void Write(const Boolean& boolean, std::ostream& ostr);
    static void Write(const Null& null, std::ostream& ostr);
    static void Write(const UnknownElement& elementRoot, std::ostream& ostr);
@@ -35,6 +36,7 @@ private:
    void Write_i(const Array& array);
    void Write_i(const String& string);
    void Write_i(const Number& number);
+   void Write_i(const Integer& integer);
    void Write_i(const Boolean& boolean);
    void Write_i(const Null& null);
    void Write_i(const UnknownElement& unknown);
@@ -42,6 +44,7 @@ private:
    virtual void Visit(const Array& array);
    virtual void Visit(const Object& object);
    virtual void Visit(const Number& number);
+   virtual void Visit(const Integer& integer);
    virtual void Visit(const String& string);
    virtual void Visit(const Boolean& boolean);
    virtual void Visit(const Null& null);

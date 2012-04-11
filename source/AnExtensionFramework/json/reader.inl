@@ -128,6 +128,7 @@ inline void Reader::Read(Object& object, std::istream& istr)                { Re
 inline void Reader::Read(Array& array, std::istream& istr)                  { Read_i(array, istr); }
 inline void Reader::Read(String& string, std::istream& istr)                { Read_i(string, istr); }
 inline void Reader::Read(Number& number, std::istream& istr)                { Read_i(number, istr); }
+inline void Reader::Read(Integer& integer, std::istream& istr)              { Read_i(integer, istr); }
 inline void Reader::Read(Boolean& boolean, std::istream& istr)              { Read_i(boolean, istr); }
 inline void Reader::Read(Null& null, std::istream& istr)                    { Read_i(null, istr); }
 inline void Reader::Read(UnknownElement& unknown, std::istream& istr)       { Read_i(unknown, istr); }
@@ -153,6 +154,11 @@ void Reader::Read_i(ElementTypeT& element, std::istream& istr)
    }
 }
 
+inline void Reader::SkipSingleLineComment(InputStream& inputStream)
+{
+    while (inputStream.EOS() == false && inputStream.Peek() != '\n')
+        inputStream.Get();
+}
 
 inline void Reader::Scan(Tokens& tokens, InputStream& inputStream)
 {
@@ -169,6 +175,13 @@ inline void Reader::Scan(Tokens& tokens, InputStream& inputStream)
 
       switch (sChar[0])
       {
+         // ignore single line comments
+         case '/':
+            MatchExpectedString("//", inputStream);
+            SkipSingleLineComment(inputStream);
+            continue; // jump back to the start of the loop so that a new token is not generated
+            break;
+
          case '{':
             token.sValue = sChar[0];
             MatchExpectedString(sChar, inputStream);
@@ -221,8 +234,7 @@ inline void Reader::Scan(Tokens& tokens, InputStream& inputStream)
          case '7':
          case '8':
          case '9':
-            MatchNumber(token.sValue, inputStream);
-            token.nType = Token::TOKEN_NUMBER;
+            token.nType = MatchIntegerOrNumber(token.sValue, inputStream);
             break;
 
          case 't':
@@ -318,16 +330,67 @@ inline void Reader::MatchString(std::string& string, InputStream& inputStream)
    MatchExpectedString("\"", inputStream);
 }
 
+inline Reader::Token::Type Reader::MatchIntegerOrNumber(std::string& sIntegerOrNumber, InputStream& inputStream)
+{
+    while (inputStream.EOS() == false)
+    {
+        switch(inputStream.Peek())
+        {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            case '-':
+            case '+':
+                break;
+
+            case '.':
+            case 'e':
+            case 'E':
+                MatchNumber(sIntegerOrNumber, inputStream);
+                return Token::TOKEN_NUMBER;
+
+            default:
+                return Token::TOKEN_INTEGER;
+        }
+        sIntegerOrNumber.push_back(inputStream.Get());  
+    }
+
+    return Token::TOKEN_INTEGER;
+}
 
 inline void Reader::MatchNumber(std::string& sNumber, InputStream& inputStream)
 {
-   const char sNumericChars[] = "0123456789.eE-+";
-   std::set<char> numericChars;
-   numericChars.insert(sNumericChars, sNumericChars + sizeof(sNumericChars));
-
-   while (inputStream.EOS() == false &&
-          numericChars.find(inputStream.Peek()) != numericChars.end())
+   while (inputStream.EOS() == false)
    {
+      switch(inputStream.Peek())
+      {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            case '.':
+            case 'e':
+            case 'E':
+            case '-':
+            case '+':
+                break;
+
+        default:
+            return;
+      }
       sNumber.push_back(inputStream.Get());   
    }
 }
@@ -370,7 +433,12 @@ inline void Reader::Parse(UnknownElement& element, Reader::TokenStream& tokenStr
          Parse(number, tokenStream);
          break;
       }
-
+      case Token::TOKEN_INTEGER:
+      {
+         Integer& integer = element;
+         Parse(integer, tokenStream);
+         break;
+      }
       case Token::TOKEN_BOOLEAN:
       {
          Boolean& boolean = element;
@@ -482,6 +550,25 @@ inline void Reader::Parse(Number& number, Reader::TokenStream& tokenStream)
    }
 
    number = dValue;
+}
+
+inline void Reader::Parse(Integer& number, Reader::TokenStream& tokenStream)
+{
+    const Token& currentToken = tokenStream.Peek(); // might need this later for throwing exception
+    const std::string& sValue = MatchExpectedToken(Token::TOKEN_INTEGER, tokenStream);
+
+    std::istringstream iStr(sValue);
+    Integer::type dValue;
+    iStr >> dValue;
+
+    // did we consume all characters in the token?
+    if (iStr.eof() == false)
+    {
+        std::string sMessage = "Unexpected character in INTEGER token: " + iStr.peek();
+        throw ParseException(sMessage, currentToken.locBegin, currentToken.locEnd);
+    }
+
+    number = dValue;
 }
 
 

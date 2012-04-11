@@ -60,6 +60,7 @@ public:
    static void Read(Array& array, std::istream& istr);
    static void Read(String& string, std::istream& istr);
    static void Read(Number& number, std::istream& istr);
+   static void Read(Integer& integer, std::istream& istr);
    static void Read(Boolean& boolean, std::istream& istr);
    static void Read(Null& null, std::istream& istr);
 
@@ -78,9 +79,11 @@ private:
          TOKEN_NEXT_ELEMENT,  //    ,
          TOKEN_MEMBER_ASSIGN, //    :
          TOKEN_STRING,        //    "xxx"
-         TOKEN_NUMBER,        //    [+/-]000.000[e[+/-]000]
+         TOKEN_NUMBER,        //    [-]000.000[e[+/-]000]
+         TOKEN_INTEGER,       //    [-]000
          TOKEN_BOOLEAN,       //    true -or- false
-         TOKEN_NULL          //    null
+         TOKEN_NULL,          //    null
+         TOKEN_COMMENT        //    C++ Single line comment (unused)
       };
 
       Type nType;
@@ -101,8 +104,10 @@ private:
    // scanning istream into token sequence
    void Scan(Tokens& tokens, InputStream& inputStream);
 
+   void SkipSingleLineComment(InputStream &inputStream);
    void EatWhiteSpace(InputStream& inputStream);
    void MatchString(std::string& sValue, InputStream& inputStream);
+   Token::Type MatchIntegerOrNumber(std::string& sIntegerOrNumber, InputStream& inputStream);
    void MatchNumber(std::string& sNumber, InputStream& inputStream);
    void MatchExpectedString(const std::string& sExpected, InputStream& inputStream);
 
@@ -112,6 +117,7 @@ private:
    void Parse(Array& array, TokenStream& tokenStream);
    void Parse(String& string, TokenStream& tokenStream);
    void Parse(Number& number, TokenStream& tokenStream);
+   void Parse(Integer& integer, TokenStream& tokenStream);
    void Parse(Boolean& boolean, TokenStream& tokenStream);
    void Parse(Null& null, TokenStream& tokenStream);
 

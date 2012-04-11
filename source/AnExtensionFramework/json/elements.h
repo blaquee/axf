@@ -12,6 +12,7 @@ Author: Terry Caton
 #include <list>
 #include <string>
 #include <stdexcept>
+#include <cstdint>
 
 /*  
 
@@ -37,6 +38,7 @@ template <typename ValueTypeT>
 class TrivialType_T;
 
 typedef TrivialType_T<double> Number;
+typedef TrivialType_T<std::int64_t> Integer;
 typedef TrivialType_T<bool> Boolean;
 typedef TrivialType_T<std::string> String;
 
@@ -81,6 +83,7 @@ public:
    UnknownElement(const Object& object);
    UnknownElement(const Array& array);
    UnknownElement(const Number& number);
+   UnknownElement(const Integer& integer);
    UnknownElement(const Boolean& boolean);
    UnknownElement(const String& string);
    UnknownElement(const Null& null);
@@ -93,6 +96,7 @@ public:
    operator const Object& () const;
    operator const Array& () const;
    operator const Number& () const;
+   operator const Integer& () const;
    operator const Boolean& () const;
    operator const String& () const;
    operator const Null& () const;
@@ -101,6 +105,7 @@ public:
    operator Object& ();
    operator Array& ();
    operator Number& ();
+   operator Integer& ();
    operator Boolean& ();
    operator String& ();
    operator Null& ();
@@ -239,6 +244,8 @@ template <typename DataTypeT>
 class TrivialType_T
 {
 public:
+   typedef DataTypeT type;
+
    TrivialType_T(const DataTypeT& t = DataTypeT());
 
    operator DataTypeT&();

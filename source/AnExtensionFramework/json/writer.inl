@@ -26,6 +26,7 @@ inline void Writer::Write(const UnknownElement& elementRoot, std::ostream& ostr)
 inline void Writer::Write(const Object& object, std::ostream& ostr)              { Write_i(object, ostr); }
 inline void Writer::Write(const Array& array, std::ostream& ostr)                { Write_i(array, ostr); }
 inline void Writer::Write(const Number& number, std::ostream& ostr)              { Write_i(number, ostr); }
+inline void Writer::Write(const Integer& integer, std::ostream& ostr)            { Write_i(integer, ostr); }
 inline void Writer::Write(const String& string, std::ostream& ostr)              { Write_i(string, ostr); }
 inline void Writer::Write(const Boolean& boolean, std::ostream& ostr)            { Write_i(boolean, ostr); }
 inline void Writer::Write(const Null& null, std::ostream& ostr)                  { Write_i(null, ostr); }
@@ -100,6 +101,11 @@ inline void Writer::Write_i(const Number& numberElement)
    m_ostr << std::setprecision(20) << numberElement.Value();
 }
 
+inline void Writer::Write_i(const Integer& integerElement)
+{
+    m_ostr << integerElement.Value();
+}
+
 inline void Writer::Write_i(const Boolean& booleanElement)
 {
    m_ostr << (booleanElement.Value() ? "true" : "false");
@@ -144,6 +150,7 @@ inline void Writer::Write_i(const UnknownElement& unknown)
 inline void Writer::Visit(const Array& array)       { Write_i(array); }
 inline void Writer::Visit(const Object& object)     { Write_i(object); }
 inline void Writer::Visit(const Number& number)     { Write_i(number); }
+inline void Writer::Visit(const Integer& integer)   { Write_i(integer); }
 inline void Writer::Visit(const String& string)     { Write_i(string); }
 inline void Writer::Visit(const Boolean& boolean)   { Write_i(boolean); }
 inline void Writer::Visit(const Null& null)         { Write_i(null); }
