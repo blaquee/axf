@@ -2,6 +2,7 @@
     "extensions" : 
     [
 		// add new extensions here for auto loading
-        "consolelogger_ext.dll", "underc_ext.dll", "memoryext.dll", "wingui.dll"
+        // note: wingui should be last in the list
+        "consolelogger_ext.dll", "underc_ext.dll", "memoryext.dll", "angelscript_ext.dll", "wingui.dll"
     ]
 }

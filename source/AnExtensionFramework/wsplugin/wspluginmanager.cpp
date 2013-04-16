@@ -251,6 +251,10 @@ namespace
                         {
                             pluginNames.push_back(currentFile.c_str());
                         }
+                        else if(ext == "as")
+                        {
+                            pluginNames.push_back(currentFile.c_str());
+                        }
                     }
 
                 }
