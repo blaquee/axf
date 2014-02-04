@@ -25,6 +25,9 @@
     <Filter Include="extensionman">
       <UniqueIdentifier>{4367cf06-5cf5-4282-97ac-5a0274f117b1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="reflection">
+      <UniqueIdentifier>{e11e82dc-77e3-4f13-acdc-e3431ffca29a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -108,6 +111,12 @@
     <ClCompile Include="wsplugin\wsplugin_custom.cpp">
       <Filter>wsplugin</Filter>
     </ClCompile>
+    <ClCompile Include="reflection\object.cpp">
+      <Filter>reflection</Filter>
+    </ClCompile>
+    <ClCompile Include="reflection\reflection.cpp">
+      <Filter>reflection</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="easyhook\ASM\ILD_x86.asm">
@@ -168,6 +177,12 @@
     </ClInclude>
     <ClInclude Include="extensionman\extension.h">
       <Filter>extensionman</Filter>
+    </ClInclude>
+    <ClInclude Include="reflection\object.h">
+      <Filter>reflection</Filter>
+    </ClInclude>
+    <ClInclude Include="reflection\reflection.h">
+      <Filter>reflection</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

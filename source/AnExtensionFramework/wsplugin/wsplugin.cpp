@@ -137,60 +137,60 @@ size_t GetLoadedPluginList_Plugin(String *strs, size_t sizeofStrs)
     return i;
 }
 
-WsBool LoadPlugin_Plugin(const char* fileName)
+AxfBool LoadPlugin_Plugin(const char* fileName)
 {
     try
     {
         PluginManager::inst().LoadPlugin(fileName);
-        return WSTRUE;
+        return AXFTRUE;
     }
     catch(const std::exception &ex)
     {
         LogFactory::inst().GetLogInterface()->Log(Log::ERROR, ex.what());
-        return WSFALSE;
+        return AXFFALSE;
     }
     catch(...)
     {
         LogFactory::inst().GetLogInterface()->Log(Log::ERROR, std::string("Unknown error while loading ") + std::string(fileName));
-	    return WSFALSE;
+	    return AXFFALSE;
     }
 }
 
-WsBool UnloadPlugin_Plugin(const char *fileName)
+AxfBool UnloadPlugin_Plugin(const char *fileName)
 {
     try
     {
         PluginManager::inst().UnloadPlugin(fileName);
-        return WSTRUE;
+        return AXFTRUE;
     }
     catch(const std::exception &ex)
     {
         LogFactory::inst().GetLogInterface()->Log(Log::ERROR, ex.what());
-        return WSFALSE;
+        return AXFFALSE;
     }
     catch(...)
     {
         LogFactory::inst().GetLogInterface()->Log(Log::ERROR, std::string("Unknown error while unloading ") + std::string(fileName));
-        return WSFALSE;
+        return AXFFALSE;
     }
 }
 
-WsBool ReloadPlugin_Plugin(const char *fileName)
+AxfBool ReloadPlugin_Plugin(const char *fileName)
 {
     try
     {
         PluginManager::inst().ReloadPlugin(fileName);
-        return WSTRUE;
+        return AXFTRUE;
     }
     catch(const std::exception &ex)
     {
         LogFactory::inst().GetLogInterface()->Log(Log::ERROR, ex.what());
-        return WSFALSE;
+        return AXFFALSE;
     }
     catch(...)
     {
         LogFactory::inst().GetLogInterface()->Log(Log::ERROR, std::string("Unknown error while reloading ") + std::string(fileName));
-        return WSFALSE;
+        return AXFFALSE;
     }
 }
 void RaiseException_Plugin(const char *msg, void *dataUnused)
@@ -245,15 +245,15 @@ size_t GetEventList_Plugin(String *strs, size_t sizeofStrs)
     return i;
 }
 
-WsBool IsEventAvailable_Plugin(const char *eventName)
+AxfBool IsEventAvailable_Plugin(const char *eventName)
 {
     Lock lock(&PluginManager::mutex);
-    return (PluginManager::inst().GetEvents().find(eventName) != PluginManager::inst().GetEvents().end() ? WSTRUE : WSFALSE);
+    return (PluginManager::inst().GetEvents().find(eventName) != PluginManager::inst().GetEvents().end() ? AXFTRUE : AXFFALSE);
 }
 
 /* all event functions are __cdecl call convention */
 /* returns NULL handle on failure */
-WsHandle SubscribeEvent_Plugin(const struct _PluginInterface *pi, const char *eventName, EventFunction eventFunc)
+AxfHandle SubscribeEvent_Plugin(const struct _PluginInterface *pi, const char *eventName, EventFunction eventFunc)
 {
     Lock lock(&PluginManager::mutex);
     map<string, set<EventFunctionData*> >::iterator ev = PluginManager::inst().GetEvents().find(eventName);
@@ -264,7 +264,7 @@ WsHandle SubscribeEvent_Plugin(const struct _PluginInterface *pi, const char *ev
         pi->data->registerEvents[eventName].insert(e);
         pi->data->registerEventsCache.insert(e);
         ev->second.insert(e);
-        return (WsHandle)e;
+        return (AxfHandle)e;
     }
     else
     {
@@ -274,9 +274,9 @@ WsHandle SubscribeEvent_Plugin(const struct _PluginInterface *pi, const char *ev
 
 /* You do not have to manually remove the event in OnUnload(), 
     the plugin manager will take care of cleaning up events */
-void UnsubscribeEvent_Plugin(const struct _PluginInterface *pi, WsHandle handle)
+void UnsubscribeEvent_Plugin(const struct _PluginInterface *pi, AxfHandle handle)
 {
-    if(pi->event->IsEventSubscribed(pi, handle) == WSFALSE)
+    if(pi->event->IsEventSubscribed(pi, handle) == AXFFALSE)
         return;
 
     Lock lock(&PluginManager::mutex);
@@ -299,9 +299,9 @@ void UnsubscribeEvent_Plugin(const struct _PluginInterface *pi, WsHandle handle)
 
 }
 
-WsBool IsEventSubscribed_Plugin(const struct _PluginInterface *pi, WsHandle handle)
+AxfBool IsEventSubscribed_Plugin(const struct _PluginInterface *pi, AxfHandle handle)
 {
-    return (pi->data->registerEventsCache.find((EventFunctionData*)handle) != pi->data->registerEventsCache.end() ? WSTRUE : WSFALSE);
+    return (pi->data->registerEventsCache.find((EventFunctionData*)handle) != pi->data->registerEventsCache.end() ? AXFTRUE : AXFFALSE);
 }
 
 void SetLogLevel_Plugin(const struct _PluginInterface *pi, const LogLevel type)
@@ -343,13 +343,13 @@ size_t GetExtensionList_Plugin(String *strs, size_t sizeofStrs)
     }
     return i;
 }
-WsBool IsExtensionAvailable_Plugin(const char *name)
+AxfBool IsExtensionAvailable_Plugin(const char *name)
 {
     Lock lock(&PluginManager::mutex);
-    return (PluginManager::inst().GetExtensionFactories().find(name) != PluginManager::inst().GetExtensionFactories().end() ? WSTRUE : WSFALSE);
+    return (PluginManager::inst().GetExtensionFactories().find(name) != PluginManager::inst().GetExtensionFactories().end() ? AXFTRUE : AXFFALSE);
 }
 
-WsExtension GetExtension_Plugin(const struct _PluginInterface *pi, const char *name)
+AxfExtension GetExtension_Plugin(const struct _PluginInterface *pi, const char *name)
 {
     if(name == 0 || pi == 0)
         return 0;
@@ -359,7 +359,7 @@ WsExtension GetExtension_Plugin(const struct _PluginInterface *pi, const char *n
 
     if(extFactory != PluginManager::inst().GetExtensionFactories().end())
     {
-        WsExtension ext = extFactory->second.Create();
+        AxfExtension ext = extFactory->second.Create();
         if(ext == 0)
             return 0;
 
@@ -377,26 +377,26 @@ WsExtension GetExtension_Plugin(const struct _PluginInterface *pi, const char *n
     }
 }
 
-WsBool ReleaseExtension_Plugin(const struct _PluginInterface *pi, WsExtension ext)
+AxfBool ReleaseExtension_Plugin(const struct _PluginInterface *pi, AxfExtension ext)
 {
     if(ext == 0 || pi == 0)
-        return WSFALSE;
+        return AXFFALSE;
 
-    std::map<WsExtension, ExtensionFactory>::iterator extFactory = pi->data->extensionCache.find(ext);
+    std::map<AxfExtension, ExtensionFactory>::iterator extFactory = pi->data->extensionCache.find(ext);
 
     if(extFactory != pi->data->extensionCache.end())
     {
         extFactory->second.Destroy(ext);
         pi->data->extensionCache.erase(extFactory);
-        return WSTRUE;
+        return AXFTRUE;
     }
     else
     {
-        return WSFALSE;
+        return AXFFALSE;
     }
 }
 
-WsHandle HookFunction_Plugin(const struct _PluginInterface *pi, void *oldAddress, void *newAddress)
+AxfHandle HookFunction_Plugin(const struct _PluginInterface *pi, void *oldAddress, void *newAddress)
 {
     if(oldAddress == 0 || newAddress == 0)
         return 0;
@@ -410,7 +410,7 @@ WsHandle HookFunction_Plugin(const struct _PluginInterface *pi, void *oldAddress
 
         pi->data->hookStateCache.insert(newhs);
 
-        return (WsHandle)newhs.get();
+        return (AxfHandle)newhs.get();
     }
     catch(const AlreadyHookedException&)
     {
@@ -430,13 +430,13 @@ struct FindByPointer
         return (target == hs.get());
     }
 };
-WsBool UnhookFunction_Plugin(const struct _PluginInterface *pi, WsHandle handle)
+AxfBool UnhookFunction_Plugin(const struct _PluginInterface *pi, AxfHandle handle)
 {
     if(pi == 0 || handle == 0)
-        return WSFALSE;
+        return AXFFALSE;
 
     Lock lock(&PluginManager::mutex);
-    WsBool unhooked = (Hookah::inst().UnhookFunction(*((HookState*)handle)) ? WSTRUE : WSFALSE);
+    AxfBool unhooked = (Hookah::inst().UnhookFunction(*((HookState*)handle)) ? AXFTRUE : AXFFALSE);
     lock.Unlock();
 
     std::set<std::shared_ptr<HookState> >::iterator it = std::find_if(pi->data->hookStateCache.begin(), 
@@ -449,14 +449,14 @@ WsBool UnhookFunction_Plugin(const struct _PluginInterface *pi, WsHandle handle)
 
     return unhooked;
 }
-WsBool IsHooked_Plugin(void *oldAddress)
+AxfBool IsHooked_Plugin(void *oldAddress)
 {
     if(oldAddress == 0)
-        return WSFALSE;
+        return AXFFALSE;
 
-    return (Hookah::inst().IsHooked(oldAddress) ? WSTRUE : WSFALSE);
+    return (Hookah::inst().IsHooked(oldAddress) ? AXFTRUE : AXFFALSE);
 }
-void *GetOriginalFunction_Plugin(WsHandle handle)
+void *GetOriginalFunction_Plugin(AxfHandle handle)
 {
     if(handle == 0)
         return 0;
@@ -464,15 +464,15 @@ void *GetOriginalFunction_Plugin(WsHandle handle)
     return ((HookState*)handle)->GetOldAddress();
 }
 
-WsBool GetAllocationBase_Plugin(AllocationInfo *allocInfo, void *addr)
+AxfBool GetAllocationBase_Plugin(AllocationInfo *allocInfo, void *addr)
 {
     MEMORY_BASIC_INFORMATION mem;
 
     if(addr==0 || allocInfo==0)
-        return WSFALSE; // GetDllMemInfo failed!pAddr
+        return AXFFALSE; // GetDllMemInfo failed!pAddr
 
     if(!VirtualQuery(addr, &mem, sizeof(mem)))
-        return WSFALSE;
+        return AXFFALSE;
 
     IMAGE_DOS_HEADER *dos = (IMAGE_DOS_HEADER*)mem.AllocationBase;
     UINT_PTR cdos = (UINT_PTR)dos;
@@ -490,7 +490,7 @@ WsBool GetAllocationBase_Plugin(AllocationInfo *allocInfo, void *addr)
         allocInfo->size = mem.RegionSize;
     }
 
-    return WSTRUE;
+    return AXFTRUE;
 }
 
 ProtectionMode VirtualProtect_Plugin(void *address, size_t size, ProtectionMode newProtection)
@@ -609,7 +609,7 @@ void * FindSignature_Plugin(const AllocationInfo *allocInfo, const char *sig)
 
 PluginInterfaceData::~PluginInterfaceData()
 {
-    for (std::map<WsExtension, ExtensionFactory>::const_iterator it = extensionCache.begin(); it != extensionCache.end(); ++it)
+    for (std::map<AxfExtension, ExtensionFactory>::const_iterator it = extensionCache.begin(); it != extensionCache.end(); ++it)
     {
         it->second.Destroy(it->first);
     }
@@ -647,11 +647,11 @@ PluginInterfaceWrapper::PluginInterfaceWrapper()
     pluginInterface.data->moduleHandle = 0;
     pluginInterface.data->log = LogFactory::inst().GetLogInterface();
 
-    pluginInterface.log->Quiet = (WsHandle)Log::QUIET;
-    pluginInterface.log->Debug = (WsHandle)Log::DEBUG;
-    pluginInterface.log->Info = (WsHandle)Log::INFO;
-    pluginInterface.log->Warn = (WsHandle)Log::WARN;
-    pluginInterface.log->Error = (WsHandle)Log::ERROR;
+    pluginInterface.log->Quiet = (AxfHandle)Log::QUIET;
+    pluginInterface.log->Debug = (AxfHandle)Log::DEBUG;
+    pluginInterface.log->Info = (AxfHandle)Log::INFO;
+    pluginInterface.log->Warn = (AxfHandle)Log::WARN;
+    pluginInterface.log->Error = (AxfHandle)Log::ERROR;
     pluginInterface.log->SetLogLevel = SetLogLevel_Plugin;
     pluginInterface.log->GetLogLevel = GetLogLevel_Plugin;
     pluginInterface.log->Log = Log_Plugin;
@@ -736,7 +736,7 @@ void Plugin::InternalLoad()
     }
     else
     {
-        if(OnInit() == WSFALSE)
+        if(OnInit() == AXFFALSE)
         {
             throw WSException(std::string("Failed to initialize (In OnInit): ") + GetFileName());
         }

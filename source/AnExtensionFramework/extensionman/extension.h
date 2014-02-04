@@ -26,7 +26,7 @@ typedef struct _ExtensionDescription
     unsigned int version;  /* the version of this plugin */
     unsigned int pluginapiVersion; /* the version of the pluginapi this plugin is using, must be AXF_API_VERSION (was AXF_PLUGIN_VERSION) */
 
-    WsBool (*OnInit)(const struct _PluginInterface*, const struct _ExtenderInterface*);  /* entry point, cdecl only */
+    AxfBool (*OnInit)(const struct _PluginInterface*, const struct _ExtenderInterface*);  /* entry point, cdecl only */
 
     /* optional info */ 
     const char *name;
@@ -55,14 +55,14 @@ typedef struct _PluginBinary
 typedef struct _PluginData
 {
     int clientVersion; /* the extension sets this to AXF_PLUGIN_VERSION */
-    WsHandle clientHandle; /* the extension sets this to non-null to signify a successful load */
-    void(*OnPluginUnload)(WsHandle); /* the unload routine set by the extension, the WsHandle argument is the clientHandle */
-    WsBool initSuccess; /* set to WSTRUE if OnInit returns WSTRUE, otherwise set to WSFALSE*/
+    AxfHandle clientHandle; /* the extension sets this to non-null to signify a successful load */
+    void(*OnPluginUnload)(AxfHandle); /* the unload routine set by the extension, the AxfHandle argument is the clientHandle */
+    AxfBool initSuccess; /* set to AXFTRUE if OnInit returns AXFTRUE, otherwise set to AXFFALSE*/
 
     PluginInterface *pluginInterface;
     const char *name;
     const char *fileExtension;
-    WsBool (*GetBinary)(struct _PluginData*, PluginBinary*);
+    AxfBool (*GetBinary)(struct _PluginData*, PluginBinary*);
     void (*ReleaseBinary)(PluginBinary*);
 } PluginData;
 
@@ -70,7 +70,7 @@ typedef void (*LogOutputFunc)(LogLevel, const char *);
 
 typedef void (*LogFormatterFunc)(String **, LogLevel, const char *);
 
-typedef WsBool (*LogFilterFunc)(LogLevel, const char *);
+typedef AxfBool (*LogFilterFunc)(LogLevel, const char *);
 
 //////////////////////////////////////////////////////////////////////////
 

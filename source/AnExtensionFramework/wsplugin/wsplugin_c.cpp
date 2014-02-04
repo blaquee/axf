@@ -45,14 +45,14 @@ int DllPlugin::Load()
     }
 }
 
-WsBool DllPlugin::OnInit()
+AxfBool DllPlugin::OnInit()
 {
     if(pluginDesc && pluginDesc->OnInit)
     {
         return pluginDesc->OnInit(&GetPluginInterface());
     }
     else
-        return WSFALSE;
+        return AXFFALSE;
 }
 
 void DllPlugin::Unload()

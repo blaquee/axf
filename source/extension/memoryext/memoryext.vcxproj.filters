@@ -20,7 +20,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\ext_memoryinterface.h">
+    <ClInclude Include="..\..\..\include\ext_memoryinterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

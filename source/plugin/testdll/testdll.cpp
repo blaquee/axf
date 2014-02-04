@@ -39,11 +39,11 @@ AXF_PLUGIN_DESCRIPTION(AXF_MAKE_VERSION(1,0,0), OnInit, "A test plugin", "Hunter
 
 static PluginInterfaceEx pi;
 
-static void writeStr(const std::string &s) 
+static void writeStr(const std::string &s)
 {
     pi.Log(s);
 }
-static void writeStr(std::stringstream &ss, bool clear=true) 
+static void writeStr(std::stringstream &ss, bool clear=true)
 {
     pi.Log(ss.str());
 
@@ -77,7 +77,7 @@ bool Is64BitProcess()
 #endif
 }
 
-static WsHandle hookedMsgBox=0;
+static AxfHandle hookedMsgBox=0;
 
 INT __stdcall myMsgBox(HWND hwnd, LPSTR, LPSTR, UINT)
 {
@@ -86,7 +86,7 @@ INT __stdcall myMsgBox(HWND hwnd, LPSTR, LPSTR, UINT)
     return MB(hwnd, "You called the hooked msgbox", "It works", 0);
 }
 
-WsBool OnInit(const PluginInterface *p)
+AxfBool OnInit(const PluginInterface *p)
 {
     pi = p;
 
@@ -96,12 +96,12 @@ WsBool OnInit(const PluginInterface *p)
     ss << "Is ON_UNLOAD_EVENT Event Available " << pi.IsEventAvailable(ON_FINALIZE_EVENT); writeStr(ss);
 
     ss << "Is OnFakeEvent Available " << pi.IsEventAvailable("OnFakeEvent"); writeStr(ss);
-    ss << "Is Bogus Event Subscribed " << pi.IsEventSubscribed((WsHandle)1234); writeStr(ss);
+    ss << "Is Bogus Event Subscribed " << pi.IsEventSubscribed((AxfHandle)1234); writeStr(ss);
 
     pi.SubscribeEvent(ON_FINALIZE_EVENT, OnFinalize);
 
     ss << "Unsubscribe to a bogus event"; writeStr(ss);
-    pi.UnsubscribeEvent((WsHandle)12345);
+    pi.UnsubscribeEvent((AxfHandle)12345);
 
     // print a list of all the events available
     std::vector<std::string> eventList = pi.GetEventList();
@@ -115,7 +115,7 @@ WsBool OnInit(const PluginInterface *p)
 
     //rangetest();
     //testhash();
-    
+
     if(Is64BitProcess())
     {
         ss << "You are running inside 64bit process" << std::endl;
@@ -156,23 +156,23 @@ WsBool OnInit(const PluginInterface *p)
     writeStr(ss);
 
     if(extensionList.empty() == false)
-    {        
+    {
         std::string &extName = extensionList[0];
         ss << "Is " << extName << " Available " << pi.IsExtensionAvailable(extName); writeStr(ss);
-        WsExtension realExt = pi.GetExtension(extName);
+        AxfExtension realExt = pi.GetExtension(extName);
         ss << "Getting a Real Extension Returned: " << realExt; writeStr(ss);
         ss << "Destroying Real Extension Returned: " << pi.ReleaseExtension(realExt); writeStr(ss);
     }
     writeStr(ss);
 
     ss << "Is FakeExtension_123 Available " << pi.IsExtensionAvailable("FakeExtension_123"); writeStr(ss);
-    WsExtension fakeExt = pi.GetExtension("FakeExtension_123");
+    AxfExtension fakeExt = pi.GetExtension("FakeExtension_123");
     ss << "Getting a Fake Extension Returned: " << fakeExt; writeStr(ss);
     ss << "Destroying Fake Extension Returned: " << pi.ReleaseExtension(fakeExt) << std::endl; writeStr(ss);
 
     //raise an exception if you dont want the plugin to load (only do this when something goes wrong)
     //pi.RaiseException("Somefing wong!");
-    hookedMsgBox = pi.HookFunction(&MessageBoxA, &myMsgBox);
+    hookedMsgBox = pi.HookFunction((void*)&MessageBoxA, (void*)&myMsgBox);
     if(hookedMsgBox)
     {
         ss << "Hooked MessageBoxA(), handle: " << hookedMsgBox << std::endl; writeStr(ss);
@@ -185,13 +185,13 @@ WsBool OnInit(const PluginInterface *p)
         pi.Log("Failed to hook MessageBoxA");
     }
 
-    std::unique_ptr<AllocationInfo> allocBase = pi.GetAllocationBase(&ExitWindowsEx);
+    std::unique_ptr<AllocationInfo> allocBase = pi.GetAllocationBase((void*)&ExitWindowsEx);
     if(allocBase)
     {
         ss << "base of ExitWindowsEx (user32.dll):"<< allocBase->base << " size:" << allocBase->size << std::endl; writeStr(ss);
         ss << "base of user32.dll:"<< pi.GetModuleBase("user32.dll") << std::endl; writeStr(ss);
 
-        char *exitWindowsExSig =
+        const char *exitWindowsExSig =
                                 "8BFF" //mov     edi, edi
                                 "55" //push    ebp
                                 "8BEC" //mov     ebp, esp
@@ -208,9 +208,9 @@ WsBool OnInit(const PluginInterface *p)
                                 "BF 00000200" //mov     edi, 20000h
                                 "74 71" //jz      short loc_7DCB152B
                                 "F6C3 04" //test    bl, 4
-                                "75 6C" //jnz     short loc_7DCB152B 
+                                "75 6C" //jnz     short loc_7DCB152B
                                 "833D ???????? 00" //cmp     dword_????????, 0
-                                "74 04"; //jz      short loc_7DCB14CC 
+                                "74 04"; //jz      short loc_7DCB14CC
 
         ss << "SigScan of ExitWindowsEx: " << pi.FindSignature(allocBase.get(), exitWindowsExSig) << std::endl; writeStr(ss);
         ss << "Real address of ExitWindowsEx: " << &ExitWindowsEx << std::endl; writeStr(ss);
@@ -219,11 +219,11 @@ WsBool OnInit(const PluginInterface *p)
     {
         pi.Log("Failed to obtain Allocation base for ExitWindowsEx\n");
     }
-    
+
 
     pi.Log("test plugin loaded");
 
-    return WSTRUE;
+    return AXFTRUE;
 }
 
 static void OnFinalize(void*)

@@ -7,23 +7,23 @@
 // these typedefs can be used by both dll and python plugins
 
 // data type defs
-struct WsHandle__{int unused;}; 
-typedef struct WsHandle__ *WsHandle;
+struct AxfHandle__{int unused;}; 
+typedef struct AxfHandle__ *AxfHandle;
 
-typedef int WsBool;
+typedef int AxfBool;
 typedef int Protocol;
 typedef unsigned int ProtectionMode;
 
-typedef WsHandle LogLevel;
-typedef WsHandle WsExtension;
+typedef AxfHandle LogLevel;
+typedef AxfHandle AxfExtension;
 
 // function pointer defs
 typedef void (*EventFunction)(void*);
-typedef WsExtension (*ExtensionFactoryCreate)();
-typedef void (*ExtensionFactoryDestroy)(WsExtension);
+typedef AxfExtension (*ExtensionFactoryCreate)();
+typedef void (*ExtensionFactoryDestroy)(AxfExtension);
 
 // constant defs
-enum {WSFALSE=0, WSTRUE=1};
+enum {AXFFALSE=0, AXFTRUE=1};
 
 // plugin events
 #define ON_INIT_EVENT "OnInit" // a plugin subscribes to this event if it wishes to perform initialization
@@ -92,7 +92,7 @@ struct PluginInterfaceData
     std::set<std::shared_ptr<HookState> > hookStateCache;
     
     LogInterface *log;
-    std::map<WsExtension, ExtensionFactory> extensionCache;
+    std::map<AxfExtension, ExtensionFactory> extensionCache;
 
     ~PluginInterfaceData();
 };
@@ -140,34 +140,34 @@ typedef struct _PluginManagerInterface
 {
     size_t (*GetUnloadedPluginList)(String *strs, size_t sizeofStrs);
     size_t (*GetLoadedPluginList)(String *strs, size_t sizeofStrs);
-    WsBool (*Load)(const char* fileName);
-    WsBool (*Unload)(const char *fileName);
-    WsBool (*Reload)(const char *fileName);
+    AxfBool (*Load)(const char* fileName);
+    AxfBool (*Unload)(const char *fileName);
+    AxfBool (*Reload)(const char *fileName);
 } PluginManagerInterface;
 
 
 typedef struct _EventInterface
 {
     size_t (*GetEventList)(String *strs, size_t sizeofStrs);
-    WsBool (*IsEventAvailable)(const char *eventName);
+    AxfBool (*IsEventAvailable)(const char *eventName);
 
     /* all event functions are __cdecl call convention */
     /* returns NULL handle on failure */
-    WsHandle (*SubscribeEvent)(const struct _PluginInterface*, const char *eventName, EventFunction eventFunc);
+    AxfHandle (*SubscribeEvent)(const struct _PluginInterface*, const char *eventName, EventFunction eventFunc);
 
     /* You do not have to manually remove the event in OnUnload(), 
        the plugin manager will take care of cleaning up events */
-    void (*UnsubscribeEvent)(const struct _PluginInterface*, WsHandle handle);
+    void (*UnsubscribeEvent)(const struct _PluginInterface*, AxfHandle handle);
 
-    WsBool (*IsEventSubscribed)(const struct _PluginInterface*, WsHandle handle);
+    AxfBool (*IsEventSubscribed)(const struct _PluginInterface*, AxfHandle handle);
 } EventInterface;
 
 typedef struct _HookInterface
 {
-    WsHandle (*HookFunction)(const struct _PluginInterface*, void *oldAddress, void *newAddress);
-    WsBool (*UnhookFunction)(const struct _PluginInterface*, WsHandle handle);
-    WsBool (*IsHooked)(void *oldAddress);
-    void *(*GetOriginalFunction)(WsHandle);
+    AxfHandle (*HookFunction)(const struct _PluginInterface*, void *oldAddress, void *newAddress);
+    AxfBool (*UnhookFunction)(const struct _PluginInterface*, AxfHandle handle);
+    AxfBool (*IsHooked)(void *oldAddress);
+    void *(*GetOriginalFunction)(AxfHandle);
 } HookInterface;
 
 typedef struct _MemoryInterface
@@ -176,9 +176,9 @@ typedef struct _MemoryInterface
         Passing a statically allocated memory address located in a module (EXE/DLL) will return the ImageBase address
         Passing a dynamically allocated memory address will return its memory block base address
 
-        returns WSFALSE if the function fails
+        returns AXFFALSE if the function fails
     */
-    WsBool (*GetAllocationBase)(AllocationInfo *allocInfo, void*);
+    AxfBool (*GetAllocationBase)(AllocationInfo *allocInfo, void*);
 
     /*
         ProtectionMode:
@@ -234,9 +234,9 @@ typedef struct _ExtensionInterface
     */
 
     size_t (*GetExtensionList)(String *strs, size_t sizeofStrs);
-    WsBool (*IsExtensionAvailable)(const char *name);
-    WsExtension (*GetExtension)(const struct _PluginInterface*, const char *name);
-    WsBool (*ReleaseExtension)(const struct _PluginInterface*, WsExtension ext);
+    AxfBool (*IsExtensionAvailable)(const char *name);
+    AxfExtension (*GetExtension)(const struct _PluginInterface*, const char *name);
+    AxfBool (*ReleaseExtension)(const struct _PluginInterface*, AxfExtension ext);
 } ExtensionInterface;
 
 typedef struct _PluginInterface
@@ -324,7 +324,7 @@ protected:
     // subclasses must implement these functions
     virtual int Load()=0; // returns the version of the pluginapi
     virtual void Unload()=0;
-    virtual WsBool OnInit()=0; // calls the OnInit function of the plugin
+    virtual AxfBool OnInit()=0; // calls the OnInit function of the plugin
 };
 
 
@@ -337,7 +337,7 @@ typedef struct _PluginDescription
     unsigned int version;  /* the version of this plugin */
     unsigned int pluginapiVersion; /* the version of the pluginapi this plugin is using, must be AXF_API_VERSION (was AXF_PLUGIN_VERSION) */
 
-    WsBool (*OnInit)(const struct _PluginInterface*);  /* entry point, cdecl only */
+    AxfBool (*OnInit)(const struct _PluginInterface*);  /* entry point, cdecl only */
 
     /* optional info */ 
     const char *name;
@@ -393,7 +393,7 @@ public:
 protected:
     virtual int Load();
     virtual void Unload();
-    virtual WsBool OnInit();
+    virtual AxfBool OnInit();
 };
 
 class CustomPlugin : public Plugin
@@ -401,8 +401,8 @@ class CustomPlugin : public Plugin
     std::string ext;
 
     // client data
-    WsHandle clientHandle;
-    void(*OnPluginUnload)(WsHandle);
+    AxfHandle clientHandle;
+    void(*OnPluginUnload)(AxfHandle);
 
 public:
     CustomPlugin( const std::string &dir, const std::string &name, const std::string &ext );
@@ -411,7 +411,7 @@ public:
 protected:
     virtual int Load();
     virtual void Unload();
-    virtual WsBool OnInit();
+    virtual AxfBool OnInit();
 };
 
 
