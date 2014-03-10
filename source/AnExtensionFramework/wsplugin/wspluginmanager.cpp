@@ -63,6 +63,7 @@ PluginManager::~PluginManager()
     for_each(loadedPlugins.begin(), loadedPlugins.end(), DeleteFunc());
 
     loadedPlugins.clear();
+	DeleteCriticalSection(&mutex);
 }
 
 //////////////////////////////////////////////////////////////////////////
