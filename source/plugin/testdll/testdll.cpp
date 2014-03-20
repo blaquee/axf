@@ -89,21 +89,22 @@ INT __stdcall myMsgBox(HWND hwnd, LPSTR, LPSTR, UINT)
 INT __stdcall MsgBoxBP(HWND hwnd, LPSTR, LPSTR, UINT)
 {
     typedef INT (WINAPI *tMsgBox)(HWND,LPCSTR, LPCSTR, UINT);
-    pi.Log("CALL FROM BREAKPOINT!");
+    pi.Log("BREAKPOINT ON MESSAGEBOXA!");
     return 1;
 }
 
-void TestBp(AxfHandle threadId, AxfHandle processId)
+__declspec(noinline)
+void printit(unsigned int *i)
 {
-    if (pi.GetCurrentProcessId() == processId)
-    {
-        pi.SetBreakpointFunc(threadId, 0, MessageBoxA, MsgBoxBP);
-    }
+    std::stringstream ss;
+    ss << "Final data is " << *i; // compiler optimization workaround
+    writeStr(ss);
 }
-unsigned int bptestvar = 10;
-void TestBp(void *data)
+
+__declspec(noinline)
+void assignit(unsigned int *i)
 {
-    pi.Log("WTF");
+    *i = 1337;
 }
 AxfBool OnInit(const PluginInterface *p)
 {
@@ -243,20 +244,22 @@ AxfBool OnInit(const PluginInterface *p)
     // test hardware breakpoint
     //pi.EnumerateThreads(TestBp);
     pi.SetBreakpointFunc(pi.GetCurrentThreadId(), 0, MessageBoxA, MsgBoxBP);
-    MessageBoxA(0, "testing", "should not disaply", 0);
+    MessageBoxA(0, "should not display", "testing BP", 0);
+    MessageBoxA(0, "should not display AGAIN", "testing BP", 0);
     pi.DeleteBreakpoint(pi.GetCurrentThreadId(), 0); // this shouldnt be neccessary once I add clean up code to axf
+    MessageBoxA(0, "should display because bp was deleted", "testing BP", 0);
 
     // test hardware breakpoint for read/writing variable
-    
+    unsigned int bptestvar = 10;
     pi.SetBreakpointVar(pi.GetCurrentThreadId(), 0, AXFTRUE, AXFTRUE, 4, &bptestvar,
         [](void *data)
         {
-            /*unsigned int v = *(unsigned int*)data;
-            std::stringstream ss; ss << "Var was modified, new value: " << v;
-            pi.Log(ss.str());*/
-        printf("wtf\n");
+            std::stringstream ss; ss << "Data pointer is " << data;
+            pi.Log(ss.str());
         }, &bptestvar);
-    bptestvar = pi.GetVersion();
+    // the following 2 lines use a compiler optimization workaround
+    assignit(&bptestvar); // this should trigger our breakpoint
+    printit(&bptestvar);  // trigger read bp
     pi.DeleteBreakpoint(pi.GetCurrentThreadId(), 0); // this shouldnt be neccessary once I add clean up code to axf
 
     pi.Log("test plugin loaded");

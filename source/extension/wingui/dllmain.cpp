@@ -173,7 +173,7 @@ static INT_PTR __stdcall DialogCallback(HWND hwnd, UINT uMsg, WPARAM wparam, LPA
             UpdatePluginLists(hwnd);
             return TRUE;
         case IDC_EXITBUTTON:
-            ExitProcess(0);
+            TerminateProcess((HANDLE)pi.GetCurrentProcess(), 0);
             return TRUE;
         }
         break;

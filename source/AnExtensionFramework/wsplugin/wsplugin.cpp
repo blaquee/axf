@@ -410,29 +410,31 @@ static LONG NTAPI BreakpointHandler(struct _EXCEPTION_POINTERS *exception)
     if (exception->ExceptionRecord->ExceptionCode != EXCEPTION_SINGLE_STEP)
         return EXCEPTION_CONTINUE_SEARCH;
 
-    void *bpAddr = exception->ExceptionRecord->ExceptionAddress;
+    //void *bpAddr = exception->ExceptionRecord->ExceptionAddress;
+    int slotBits = exception->ContextRecord->Dr6 & 0xF; // bits 0-3 contain the slot index
+    bool handled = false;
 
-    // Handle the breakpoints and modify EIP register
-    for (int i = 0; i < 4; i++)
+    std::wstringstream ss; ss << "slotbits " << slotBits << " dr7 " << exception->ContextRecord->Dr7;
+    MessageBoxW(0, ss.str().c_str(), L"IN MASTER HANDLER", 0);
+    for (int slot = 0; slot < 4;slot++)
     {
-        if (bpAddr == bpWatchAddr[i])
+        if (slotBits & 1)
         {
-            if (bpHandlerVar[i])
+            if (bpHandlerVar[slot]) //databreak point
             {
-                UINT_PTR newEip = exception->ContextRecord->Eip;
-                bpDisasm[i].EIP = newEip;
-                int len = Disasm(&bpDisasm[i]);
-                if (len > 0) newEip += len;
-                bpHandlerVar[i](bpUserdata[i]);
-                exception->ContextRecord->Eip = newEip;
+                bpHandlerVar[slot](bpUserdata[slot]);
             }
-            else
+            else if (bpHandler[slot]) // code breakpoint
             {
-                exception->ContextRecord->Eip = (UINT_PTR)bpHandler[i];
+                exception->ContextRecord->Eip = (UINT_PTR)bpHandler[slot];
             }
-            return EXCEPTION_CONTINUE_EXECUTION;
+            handled = true;
         }
+        slotBits >>= 1;
     }
+    exception->ContextRecord->Dr6 = 0; // the cpu does not manually clear dr6!
+
+    return handled ? EXCEPTION_CONTINUE_EXECUTION : EXCEPTION_CONTINUE_SEARCH;
 }
 
 // valid bpSlots are 0,1,2,3
@@ -491,10 +493,12 @@ void SetBreakpointFunc_Plugin(const struct _PluginInterface *pi, AxfHandle threa
 
 // valid bpSlots are 0,1,2,3
 // valid sizes are 1, 2, 4, 8
-void SetBreakpointVar_Plugin(const struct _PluginInterface *pi, AxfHandle threadId, unsigned int bpSlot, AxfBool read, AxfBool write, int size, void *varAddr, EventFunction handler, void *userdata)
+void SetBreakpointVar_Plugin(const struct _PluginInterface *pi, AxfHandle threadId, 
+                             unsigned int bpSlot, AxfBool read, AxfBool write, int size, void *varAddr, EventFunction handler, void *userdata)
 {
     if (bpSlot > 3) return;
-    if (size != 1 || size != 2 || size != 4 || size != 8) return;
+    if (!(size == 1 || size == 2 || size == 4 || size == 8)) return;
+    if (!read && !write) { pi->hook->DeleteBreakpoint(threadId, bpSlot); return;  }
 
     if (bpMasterHandler == 0)
     {
@@ -617,6 +621,7 @@ void DeleteBreakpoint_Plugin(AxfHandle threadId, unsigned int bpSlot)
             c.Dr7 &= ~(15 << 28);
             c.Dr3 = (UINT_PTR)0; break;
     }
+
     SetThreadContext(hthread, &c); //setup debug registers.
 
     // clear info
@@ -631,6 +636,9 @@ void DeleteBreakpoint_Plugin(AxfHandle threadId, unsigned int bpSlot)
         ResumeThread(hthread);
         CloseHandle(hthread);
     }
+
+    std::wstringstream ss; ss << " dr7 " << c.Dr7;
+    MessageBoxW(0, ss.str().c_str(), L"AFTER CLEARING", 0);
 }
 
 size_t GetExtensionList_Plugin(String *strs, size_t sizeofStrs)
@@ -1140,13 +1148,18 @@ void Plugin::InternalLoad()
     {
         std::stringstream ss;
         ss << std::endl 
-            << "pluginapi version: " << v << std::endl 
-            <<  "AXF version: " << AXF_VERSION << std::endl
+            << "Plugin version: " << AXF_GET_MAJOR_VERSION(v) << "."
+                                     << AXF_GET_MINOR_VERSION(v) << "."
+                                     << AXF_GET_SERVICE_VERSION(v)  << std::endl
+
+                                     << "Your AXF version: " << AXF_GET_MAJOR_VERSION(AXF_VERSION) << "." 
+                                     << AXF_GET_MINOR_VERSION(AXF_VERSION) << "."
+                                     << AXF_GET_SERVICE_VERSION(AXF_VERSION) << std::endl
             << "Plugin path: " << GetFileDir() << std::endl
             << "Plugin filename: " << GetFileName() << std::endl;
             
-        throw WSException(std::string("This plugin is compiled with a newer version of AXF and "  
-                           "is not supported with the current version of AXF ") + ss.str());
+        throw WSException(std::string("This plugin was compiled with a newer version of AXF and "  
+                                      "its not supported with the current version of AXF ") + ss.str());
     }
     else
     {

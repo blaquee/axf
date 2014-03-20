@@ -33,5 +33,9 @@
                       ((AXF_MINOR_VERSION)   << (AXF_VERSION_MINOR_MASK))   |  \
                       ((AXF_SERVICE_VERSION) << (AXF_VERSION_SERVICE_MASK)) )
 
+#define AXF_GET_MAJOR_VERSION(ver) ((ver >> AXF_VERSION_MAJOR_MASK)&255)
+#define AXF_GET_MINOR_VERSION(ver) ((ver >> AXF_VERSION_MINOR_MASK)&255)
+#define AXF_GET_SERVICE_VERSION(ver) ((ver >> AXF_VERSION_SERVICE_MASK)&255)
+
 #endif // wsversion_h__
 

@@ -1,6 +1,7 @@
 #include <io.h>
 #include <fcntl.h>
 #include <iostream>
+#include <stdio.h>
 
 #include "extensionapi.h"
 
@@ -35,7 +36,7 @@ static void OpenConsole()
     setvbuf( stderr, NULL, _IONBF, 0 );
     setvbuf( stdin, NULL, _IONBF, 0 );
 
-    std::ios::sync_with_stdio();
+    std::ios::sync_with_stdio(false);
 
     SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), ENABLE_QUICK_EDIT_MODE|ENABLE_EXTENDED_FLAGS);
 }
@@ -53,7 +54,7 @@ static void ConsoleLogOutput(LogLevel level, const char *s)
     else if(level == pi.Warn())
         title = "WARN";
 
-    std::cout << title << ": " << s << std::endl;
+    printf("%s: %s\n", title, s);
 }
 
 static AxfBool OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
