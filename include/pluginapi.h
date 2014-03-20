@@ -75,7 +75,7 @@ service = Bug fixes or enhancements to the system, no API changes and will not r
 */
 
 #define AXF_API_MAJOR_VERSION 1
-#define AXF_API_MINOR_VERSION 0
+#define AXF_API_MINOR_VERSION 1
 #define AXF_API_SERVICE_VERSION 0
 
 #define AXF_VERSION_MAJOR_MASK 16
@@ -343,6 +343,7 @@ typedef struct _LoggingInterface
     LogLevel (*GetLogLevel)(const struct _PluginInterface*);
     void (*Log)(const struct _PluginInterface*, const char *s);
     void (*Log2)(const struct _PluginInterface*, const LogLevel type, const char *s);
+    void(*LogBinaryData)(const struct _PluginInterface*, const char *title, unsigned char *buf, int len);
 } LoggingInterface;
 
 typedef struct _PluginManagerInterface
@@ -352,6 +353,8 @@ typedef struct _PluginManagerInterface
     AxfBool (*Load)(const char* fileName);
     AxfBool (*Unload)(const char *fileName);
     AxfBool (*Reload)(const char *fileName);
+    AxfBool (*UnloadSelf)(const struct _PluginInterface*);
+    AxfBool (*ReloadSelf)(const struct _PluginInterface*);
 } PluginManagerInterface;
 
 typedef struct _EventInterface
@@ -382,6 +385,11 @@ typedef struct _HookInterface
     AxfBool (*UnhookFunction)(const struct _PluginInterface*, AxfHandle handle);
     AxfBool (*IsHooked)(void *oldAddress);
     void *(*GetOriginalFunction)(AxfHandle);
+
+    /* breakpoints */
+    void(*SetBreakpointFunc)(const struct _PluginInterface*, AxfHandle threadId, unsigned int bpSlot, void *func, void *handler);
+    void(*SetBreakpointVar) (const struct _PluginInterface*, AxfHandle threadId, unsigned int bpSlot, AxfBool read, AxfBool write, int size, void *varAddr, EventFunction handler, void *userdata);
+    void(*DeleteBreakpoint)(AxfHandle threadId, unsigned int bpSlot);
 } HookInterface;
 
 typedef struct _MemoryInterface
@@ -454,6 +462,18 @@ typedef struct _ExtensionInterface
     AxfBool (*ReleaseExtension)(const struct _PluginInterface*, AxfExtension ext);
 } ExtensionInterface;
 
+typedef struct _ThreadInterface
+{
+    AxfHandle(*GetCurrentThread)(void);
+    AxfHandle(*GetCurrentThreadId)(void);
+    AxfHandle(*OpenThread)(const struct _PluginInterface*, AxfHandle threadId);
+    void(*CloseThread)(const struct _PluginInterface*, AxfHandle threadHandle);
+    void(*EnumerateThreads)(void(*callback)(AxfHandle threadId, AxfHandle ownerProcessId));
+    AxfHandle(*GetCurrentProcess)(void);
+    AxfHandle(*GetCurrentProcessId)(void);
+    void(*EnumerateProcesses)(void(*callback)(AxfHandle processId));
+} ThreadInterface;
+
 typedef struct _PluginInterface
 {
     const void * const data;
@@ -465,6 +485,7 @@ typedef struct _PluginInterface
     const ExtensionInterface * const extension;
     const HookInterface * const hook;
     const MemoryInterface * const memory;
+    const ThreadInterface * const thread;
 
 } PluginInterface;
 
@@ -645,6 +666,10 @@ public:
     {
         GetPluginInterface().log->Log2(GetPluginInterfacePtr(), type, s.c_str());
     }
+    void LogBinaryData(const std::string &title, unsigned char *buf, int len)
+    {
+        GetPluginInterface().log->LogBinaryData(GetPluginInterfacePtr(), title.c_str(), buf, len);
+    }
 };
 
 class PluginManagerInterfaceEx : public virtual InterfaceEx
@@ -690,6 +715,14 @@ public:
     AxfBool ReloadPlugin(const std::string &fileName) const
     {
         return GetPluginInterface().manager->Reload(fileName.c_str());
+    }
+    AxfBool UnloadSelf()
+    {
+        return GetPluginInterface().manager->UnloadSelf(GetPluginInterfacePtr());
+    }
+    AxfBool ReloadSelf()
+    {
+        return GetPluginInterface().manager->ReloadSelf(GetPluginInterfacePtr());
     }
 };
 
@@ -762,6 +795,19 @@ public:
     void *GetOriginalFunction(AxfHandle handle) const
     {
         return GetPluginInterface().hook->GetOriginalFunction(handle);
+    }
+
+    void SetBreakpointFunc(AxfHandle threadId, unsigned int bpSlot, void *func, void *handler)
+    {
+        GetPluginInterface().hook->SetBreakpointFunc(GetPluginInterfacePtr(), threadId, bpSlot, func, handler);
+    }
+    void SetBreakpointVar(AxfHandle threadId, unsigned int bpSlot, AxfBool read, AxfBool write, int size, void *varAddr, EventFunction handler, void *userdata=0)
+    {
+        GetPluginInterface().hook->SetBreakpointVar(GetPluginInterfacePtr(), threadId, bpSlot, read, write, size, varAddr, handler, userdata);
+    }
+    void DeleteBreakpoint(AxfHandle threadId, unsigned int bpSlot)
+    {
+        GetPluginInterface().hook->DeleteBreakpoint(threadId, bpSlot);
     }
 };
 
@@ -861,6 +907,48 @@ public:
     }
 };
 
+class ThreadInterfaceEx : public virtual InterfaceEx
+{
+public:
+    ThreadInterfaceEx(){}
+    ThreadInterfaceEx(const PluginInterface *pi) : InterfaceEx(pi) {}
+    virtual ~ThreadInterfaceEx(){}
+
+
+    AxfHandle GetCurrentThread(void)
+    {
+        return GetPluginInterface().thread->GetCurrentThread();
+    }
+    AxfHandle GetCurrentThreadId(void)
+    {
+        return GetPluginInterface().thread->GetCurrentThreadId();
+    }
+    AxfHandle OpenThread(AxfHandle threadId)
+    {
+        return GetPluginInterface().thread->OpenThread(GetPluginInterfacePtr(), threadId);
+    }
+    void CloseThread(AxfHandle threadHandle)
+    {
+        GetPluginInterface().thread->CloseThread(GetPluginInterfacePtr(), threadHandle);
+    }
+    void EnumerateThreads(void(*callback)(AxfHandle threadId, AxfHandle ownerProcessId))
+    {
+        GetPluginInterface().thread->EnumerateThreads(callback);
+    }
+    AxfHandle GetCurrentProcess(void)
+    {
+        return GetPluginInterface().thread->GetCurrentProcess();
+    }
+    AxfHandle GetCurrentProcessId(void)
+    {
+        return GetPluginInterface().thread->GetCurrentProcessId();
+    }
+    void EnumerateProcesses(void(*callback)(AxfHandle processId))
+    {
+        GetPluginInterface().thread->EnumerateProcesses(callback);
+    }
+};
+
 class PluginInterfaceEx : public virtual InterfaceEx,
                           public EventInterfaceEx,
                           public LoggingInterfaceEx,
@@ -868,7 +956,8 @@ class PluginInterfaceEx : public virtual InterfaceEx,
                           public SystemInterfaceEx,
                           public ExtensionInterfaceEx,
                           public HookInterfaceEx,
-                          public MemoryInterfaceEx
+                          public MemoryInterfaceEx,
+                          public ThreadInterfaceEx
 {
 public:
     PluginInterfaceEx(){}
@@ -881,7 +970,8 @@ public:
         SystemInterfaceEx(pi),
         ExtensionInterfaceEx(pi),
         HookInterfaceEx(pi),
-        MemoryInterfaceEx(pi)
+        MemoryInterfaceEx(pi),
+        ThreadInterfaceEx(pi)
         {}
 
     PluginInterfaceEx &operator=(const PluginInterface *pi)

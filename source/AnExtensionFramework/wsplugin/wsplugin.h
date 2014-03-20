@@ -86,6 +86,7 @@ struct EventFunctionData
 struct PluginInterfaceData
 {
     void *moduleHandle;  // module handle for current dll
+    std::string pluginName; //current plugin name 
 
     std::map<std::string, std::set<EventFunctionData*> > registerEvents;
     std::set<EventFunctionData*> registerEventsCache;
@@ -93,6 +94,8 @@ struct PluginInterfaceData
     
     LogInterface *log;
     std::map<AxfExtension, ExtensionFactory> extensionCache;
+
+    std::set<AxfHandle> openedThreadHandles;
 
     ~PluginInterfaceData();
 };
@@ -134,6 +137,7 @@ typedef struct _LoggingInterface
     LogLevel (*GetLogLevel)(const struct _PluginInterface*);
     void (*Log)(const struct _PluginInterface*, const char *s);
     void (*Log2)(const struct _PluginInterface*, const LogLevel type, const char *s);
+    void(*LogBinaryData)(const struct _PluginInterface*, const char *title, unsigned char *buf, int len);
 } LoggingInterface;
 
 typedef struct _PluginManagerInterface
@@ -143,6 +147,8 @@ typedef struct _PluginManagerInterface
     AxfBool (*Load)(const char* fileName);
     AxfBool (*Unload)(const char *fileName);
     AxfBool (*Reload)(const char *fileName);
+    AxfBool (*UnloadSelf)(const struct _PluginInterface*);
+    AxfBool (*ReloadSelf)(const struct _PluginInterface*);
 } PluginManagerInterface;
 
 
@@ -168,6 +174,11 @@ typedef struct _HookInterface
     AxfBool (*UnhookFunction)(const struct _PluginInterface*, AxfHandle handle);
     AxfBool (*IsHooked)(void *oldAddress);
     void *(*GetOriginalFunction)(AxfHandle);
+
+    /* breakpoints */
+    void (*SetBreakpointFunc)(const struct _PluginInterface*, AxfHandle threadId, unsigned int bpSlot, void *func, void *handler);
+    void (*SetBreakpointVar)(const struct _PluginInterface*, AxfHandle threadId, unsigned int bpSlot, AxfBool read, AxfBool write, int size, void *varAddr, EventFunction handler, void *userdata);
+    void (*DeleteBreakpoint)(AxfHandle threadId, unsigned int bpSlot);
 } HookInterface;
 
 typedef struct _MemoryInterface
@@ -239,6 +250,18 @@ typedef struct _ExtensionInterface
     AxfBool (*ReleaseExtension)(const struct _PluginInterface*, AxfExtension ext);
 } ExtensionInterface;
 
+typedef struct _ThreadInterface
+{
+    AxfHandle (*GetCurrentThread)(void);
+    AxfHandle (*GetCurrentThreadId)(void);
+    AxfHandle (*OpenThread)(const struct _PluginInterface*, AxfHandle threadId);
+    void (*CloseThread)(const struct _PluginInterface*, AxfHandle threadHandle);
+    void(*EnumerateThreads)(void(*callback)(AxfHandle threadId, AxfHandle ownerProcessId));
+    AxfHandle (*GetCurrentProcess)(void);
+    AxfHandle (*GetCurrentProcessId)(void);
+    void(*EnumerateProcesses)(void(*callback)(AxfHandle processId));
+} ThreadInterface;
+
 typedef struct _PluginInterface
 {
     PluginInterfaceData *data;
@@ -250,6 +273,7 @@ typedef struct _PluginInterface
     ExtensionInterface *extension;
     HookInterface *hook;
     MemoryInterface *memory;
+    ThreadInterface *thread;
 
 } PluginInterface;
 

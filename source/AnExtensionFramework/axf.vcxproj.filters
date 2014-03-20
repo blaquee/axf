@@ -28,6 +28,9 @@
     <Filter Include="reflection">
       <UniqueIdentifier>{e11e82dc-77e3-4f13-acdc-e3431ffca29a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="beaengine">
+      <UniqueIdentifier>{54c31f0d-8a77-428f-a892-89dd0b240461}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -117,6 +120,9 @@
     <ClCompile Include="reflection\reflection.cpp">
       <Filter>reflection</Filter>
     </ClCompile>
+    <ClCompile Include="beaengine\sources\BeaEngine.c">
+      <Filter>beaengine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="easyhook\ASM\ILD_x86.asm">
@@ -183,6 +189,9 @@
     </ClInclude>
     <ClInclude Include="reflection\reflection.h">
       <Filter>reflection</Filter>
+    </ClInclude>
+    <ClInclude Include="beaengine\include\beaengine\BeaEngine.h">
+      <Filter>beaengine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

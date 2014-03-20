@@ -6,8 +6,12 @@
 #include "wsversion.h"
 #include "wsthread.h"
 #include "wslog.h"
+
+#include <beaengine\BeaEngine.h>
 #include <iterator>
 #include <limits>
+#include <TlHelp32.h>
+#include <Psapi.h>
 
 #undef max
 
@@ -193,6 +197,16 @@ AxfBool ReloadPlugin_Plugin(const char *fileName)
         return AXFFALSE;
     }
 }
+AxfBool UnloadSelf_Plugin(const struct _PluginInterface *pi)
+{
+    std::string nameCopy = pi->data->pluginName; // make copy for safe unloading
+    return pi->manager->Unload(nameCopy.c_str());
+}
+AxfBool ReloadSelf_Plugin(const struct _PluginInterface *pi)
+{
+    std::string nameCopy = pi->data->pluginName; // make copy for safe reloading
+    return pi->manager->Reload(nameCopy.c_str());
+}
 void RaiseException_Plugin(const char *msg, void *dataUnused)
 {
     throw WSException(msg);
@@ -319,6 +333,304 @@ void Log_Plugin(const struct _PluginInterface *pi, const char *s)
 void Log2_Plugin(const struct _PluginInterface *pi, const LogLevel type, const char *s)
 {
     pi->data->log->Log((unsigned int)type, s);
+}
+void PrintBinaryData_Plugin(const struct _PluginInterface *pi, const char *function, unsigned char *buf, int len)
+{
+    std::stringstream ss;
+
+    if (!len || len == -1) {
+        return;
+    }
+
+    ss << std::endl << '[' << function << "]" << " len=" << len << std::endl;
+
+    int printed = 0;
+    for (int i = 1; i <= len; i++) {
+        unsigned char ch = static_cast<unsigned char>(*buf);
+        char tmp[4];
+        sprintf_s(tmp, "%s%X ", (ch <= 0xF) ? "0" : "", ch);
+        ss << tmp << std::flush;
+        buf++;
+
+        if (i % 16 == 0) {
+            ss << " |" << std::flush;
+            char *prevBuf = reinterpret_cast<char*>(buf - 16); // go back 16
+            for (int j = 0; j<16; j++)
+            {
+                if (isprint(prevBuf[j])) {
+                    ss << prevBuf[j];
+                }
+                else  {
+                    ss << ".";
+                }
+            }
+            ss << std::endl;
+            printed += 16;
+        }
+
+    }
+    int leftover = len - printed;
+    if (leftover) {
+        for (int j = 0; j< (16 - leftover) * 3; j++) //(16-leftover)*2 + (16 - leftover) or spaces
+        {
+            ss << " ";
+        }
+        ss << " |" << std::flush;
+        char *prevBuf = reinterpret_cast<char*>(buf - leftover); // go back 16
+        for (int j = 0; j<leftover; j++)
+        {
+            if (isprint(prevBuf[j])) {
+                ss << prevBuf[j];
+            }
+            else {
+                ss << ".";
+            }
+        }
+        ss << std::endl;
+        printed += leftover;
+    }
+
+    std::string s = ss.str();
+    pi->log->Log(pi, s.c_str());
+}
+
+
+static void *bpMasterHandler=0; // RemoveVectoredExceptionHandler
+static void *bpWatchAddr[4] = { 0, 0, 0, 0 };
+static void *bpHandler[4] = { 0, 0, 0, 0 };
+static EventFunction bpHandlerVar[4] = { 0, 0, 0, 0 };
+static void *bpUserdata[4] = { 0, 0, 0, 0 };
+static DISASM bpDisasm[4];
+static const PluginInterface *bpSlotTakenBy[4] = { 0, 0, 0, 0 };
+static bool bpIsEnabled[4] = { false, false, false, false };
+
+static LONG NTAPI BreakpointHandler(struct _EXCEPTION_POINTERS *exception)
+{
+    // Then it is not our hardware breakpoint
+    if (exception->ExceptionRecord->ExceptionCode != EXCEPTION_SINGLE_STEP)
+        return EXCEPTION_CONTINUE_SEARCH;
+
+    void *bpAddr = exception->ExceptionRecord->ExceptionAddress;
+
+    // Handle the breakpoints and modify EIP register
+    for (int i = 0; i < 4; i++)
+    {
+        if (bpAddr == bpWatchAddr[i])
+        {
+            if (bpHandlerVar[i])
+            {
+                UINT_PTR newEip = exception->ContextRecord->Eip;
+                bpDisasm[i].EIP = newEip;
+                int len = Disasm(&bpDisasm[i]);
+                if (len > 0) newEip += len;
+                bpHandlerVar[i](bpUserdata[i]);
+                exception->ContextRecord->Eip = newEip;
+            }
+            else
+            {
+                exception->ContextRecord->Eip = (UINT_PTR)bpHandler[i];
+            }
+            return EXCEPTION_CONTINUE_EXECUTION;
+        }
+    }
+}
+
+// valid bpSlots are 0,1,2,3
+void SetBreakpointFunc_Plugin(const struct _PluginInterface *pi, AxfHandle threadId, unsigned int bpSlot, void *func, void *handler)
+{
+    if (bpSlot > 3) return;
+
+    if (bpMasterHandler == 0)
+    {
+        bpMasterHandler = AddVectoredExceptionHandler(1, BreakpointHandler);
+        if (!bpMasterHandler) return;
+    }
+
+    DWORD tid = (DWORD)threadId;
+    bool isCurrentThread = (tid == GetCurrentThreadId());
+    HANDLE hthread = (isCurrentThread ? GetCurrentThread() : OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_SET_CONTEXT, FALSE, tid));
+
+    CONTEXT c;
+    c.ContextFlags = CONTEXT_DEBUG_REGISTERS; //we need only debug registers
+
+    // suspend thread to avoid crash
+    if (!isCurrentThread)
+    {
+        SuspendThread(hthread);
+    }
+
+    GetThreadContext(hthread, &c);
+    c.Dr6 = 0;           //clear debug status register (only bits 0-3 of dr6 are cleared by processor)
+    c.Dr7 |= 1 << (bpSlot * 2); //set bit to 1 - enable local breakpoint.
+    switch (bpSlot)
+    {
+        case 0:
+            c.Dr0 = (UINT_PTR)func;break;
+        case 1:
+            c.Dr1 = (UINT_PTR)func; break;
+        case 2:
+            c.Dr2 = (UINT_PTR)func; break;
+        case 3:
+            c.Dr3 = (UINT_PTR)func; break;
+    }
+    SetThreadContext(hthread, &c); //setup debug registers.
+
+    // save info
+    bpWatchAddr[bpSlot] = func;
+    bpHandler[bpSlot] = handler;
+    bpHandlerVar[bpSlot] = 0;
+    bpUserdata[bpSlot] = 0;
+    bpSlotTakenBy[bpSlot] = pi;
+
+    if (!isCurrentThread)
+    {
+        ResumeThread(hthread);
+        CloseHandle(hthread);
+    }
+}
+
+// valid bpSlots are 0,1,2,3
+// valid sizes are 1, 2, 4, 8
+void SetBreakpointVar_Plugin(const struct _PluginInterface *pi, AxfHandle threadId, unsigned int bpSlot, AxfBool read, AxfBool write, int size, void *varAddr, EventFunction handler, void *userdata)
+{
+    if (bpSlot > 3) return;
+    if (size != 1 || size != 2 || size != 4 || size != 8) return;
+
+    if (bpMasterHandler == 0)
+    {
+        bpMasterHandler = AddVectoredExceptionHandler(1, BreakpointHandler);
+        if (!bpMasterHandler) return;
+    }
+
+    DWORD tid = (DWORD)threadId;
+    bool isCurrentThread = (tid == GetCurrentThreadId());
+    HANDLE hthread = (isCurrentThread ? GetCurrentThread() : OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_SET_CONTEXT, FALSE, tid));
+
+    CONTEXT c;
+    c.ContextFlags = CONTEXT_DEBUG_REGISTERS; //we need only debug registers
+
+    // suspend thread to avoid crash
+    if (!isCurrentThread)
+    {
+        SuspendThread(hthread);
+    }
+
+    int rwBits = 0;
+    if (read && !write) rwBits = 0;
+    else if (!read && write) rwBits = 1;
+    else if (read && write) rwBits = 3;
+
+    int sizeBits = 0;
+    if (size == 1) sizeBits = 0;
+    else if (size == 2) sizeBits = 1;
+    else if (size == 4) sizeBits = 3;
+    else if (size == 8) sizeBits = 2;
+
+    GetThreadContext(hthread, &c);
+    c.Dr6 = 0;           //clear debug status register (only bits 0-3 of dr6 are cleared by processor)
+    c.Dr7 |= 1 << (bpSlot * 2); //set bit to 1 - enable local breakpoint.
+    switch (bpSlot)
+    {
+        //The low - order eight bits of DR7(0, 2, 4, 6 and 1, 3, 5, 7) selectively enable the four address breakpoint conditions.
+        //There are two levels of enabling : the local(0, 2, 4, 6) and global(1, 3, 5, 7) levels.
+        //The local enable bits are automatically reset by the processor at every task switch to avoid unwanted breakpoint 
+        //conditions in the new task.The global enable bits are not reset by a task switch; therefore, they can be used for 
+        //conditions that are global to all tasks.
+        //
+        // TLDR: "0, 2, 4, 6" = LOCAL, "1, 3, 5, 7" = GLOBAL
+
+        //dr6 must be cleared manually after every handler invocation
+
+        //Bits 16-17 (DR0), 20-21 (DR1), 24-25 (DR2), 28-29 (DR3), define when breakpoints trigger. 
+        //Each breakpoint has a two-bit entry that specifies whether they break on execution/read (00b), data write (01b), data read or write (11b). 
+        //
+        // Bits 18-19 (DR0), 22-23 (DR1), 26-27 (DR2), 30-31 (DR3), define how large an area of memory is watched by breakpoints. 
+        // Again each breakpoint has a two-bit entry that specifies whether they watch one (00b), two (01b), eight (10b) or four (11b) bytes
+        case 0:
+            c.Dr7 |= rwBits << 16;
+            c.Dr7 |= sizeBits << 18;
+            c.Dr0 = (UINT_PTR)varAddr; break;
+        case 1:
+            c.Dr7 |= rwBits << 20;
+            c.Dr7 |= sizeBits << 22;
+            c.Dr1 = (UINT_PTR)varAddr; break;
+        case 2:
+            c.Dr7 |= rwBits << 24;
+            c.Dr7 |= sizeBits << 26;
+            c.Dr2 = (UINT_PTR)varAddr; break;
+        case 3:
+            c.Dr7 |= rwBits << 28;
+            c.Dr7 |= sizeBits << 30;
+            c.Dr3 = (UINT_PTR)varAddr; break;
+    }
+    SetThreadContext(hthread, &c); //setup debug registers.
+
+    // save info
+    bpWatchAddr[bpSlot] = varAddr;
+    bpHandler[bpSlot] = 0;
+    bpHandlerVar[bpSlot] = handler;
+    bpUserdata[bpSlot] = userdata;
+    bpSlotTakenBy[bpSlot] = pi;
+
+    memset(&bpDisasm[bpSlot], 0, sizeof(DISASM));
+
+    if (!isCurrentThread)
+    {
+        ResumeThread(hthread);
+        CloseHandle(hthread);
+    }
+}
+
+
+void DeleteBreakpoint_Plugin(AxfHandle threadId, unsigned int bpSlot)
+{
+    if (bpSlot > 3) return;
+
+    DWORD tid = (DWORD)threadId;
+    bool isCurrentThread = (tid == GetCurrentThreadId());
+    HANDLE hthread = (isCurrentThread ? GetCurrentThread() : OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_SET_CONTEXT, FALSE, tid));
+
+    CONTEXT c;
+    c.ContextFlags = CONTEXT_DEBUG_REGISTERS; //we need only debug registers
+
+    // suspend thread to avoid crash
+    if (!isCurrentThread)
+    {
+        SuspendThread(hthread);
+    }
+
+    GetThreadContext(hthread, &c);
+    c.Dr6 = 0;           //clear debug status register (only bits 0-3 of dr6 are cleared by processor)
+    c.Dr7 &= ~(1 << (bpSlot * 2)); //set bit to 0 - disable local breakpoint.
+    switch (bpSlot)
+    {
+        case 0:
+            c.Dr7 &= ~(15 << 16); // also clear the size and rw bits
+            c.Dr0 = (UINT_PTR)0;break;
+        case 1:
+            c.Dr7 &= ~(15 << 20);
+            c.Dr1 = (UINT_PTR)0; break;
+        case 2:
+            c.Dr7 &= ~(15 << 24);
+            c.Dr2 = (UINT_PTR)0; break;
+        case 3:
+            c.Dr7 &= ~(15 << 28);
+            c.Dr3 = (UINT_PTR)0; break;
+    }
+    SetThreadContext(hthread, &c); //setup debug registers.
+
+    // clear info
+    bpWatchAddr[bpSlot] = 0;
+    bpHandler[bpSlot] = 0;
+    bpHandlerVar[bpSlot] = 0;
+    bpUserdata[bpSlot] = 0;
+    bpSlotTakenBy[bpSlot] = 0;
+
+    if (!isCurrentThread)
+    {
+        ResumeThread(hthread);
+        CloseHandle(hthread);
+    }
 }
 
 size_t GetExtensionList_Plugin(String *strs, size_t sizeofStrs)
@@ -607,6 +919,85 @@ void * FindSignature_Plugin(const AllocationInfo *allocInfo, const char *sig)
 }
 
 
+AxfHandle GetCurrentThread_Plugin(void)
+{
+    return (AxfHandle)GetCurrentThread();
+}
+
+AxfHandle GetCurrentThreadID_Plugin(void)
+{
+    return (AxfHandle)GetCurrentThreadId();
+}
+AxfHandle OpenThread_Plugin(const struct _PluginInterface *pi, AxfHandle threadId)
+{
+    HANDLE h = OpenThread(THREAD_ALL_ACCESS, FALSE, (DWORD)threadId);
+    if (h)
+    {
+        pi->data->openedThreadHandles.insert((AxfHandle)h);
+    }
+    return (AxfHandle)h;
+}
+void CloseThread_Plugin(const struct _PluginInterface *pi, AxfHandle threadHandle)
+{
+    std::set<AxfHandle>::iterator it = pi->data->openedThreadHandles.find(threadHandle);
+    if (it != pi->data->openedThreadHandles.end())
+    {
+        CloseHandle(*it);
+        pi->data->openedThreadHandles.erase(it);
+    }
+}
+
+void EnumerateThreads_Plugin(void(*callback)(AxfHandle threadId, AxfHandle ownerProcessId))
+{
+    HANDLE hThreadSnap = INVALID_HANDLE_VALUE;
+    THREADENTRY32 te32;
+
+    hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+    if (hThreadSnap == INVALID_HANDLE_VALUE)
+        return;
+
+    te32.dwSize = sizeof(THREADENTRY32);
+
+    if (!Thread32First(hThreadSnap, &te32))
+    {
+        CloseHandle(hThreadSnap);
+        return;
+    }
+
+    do
+    {
+        callback((AxfHandle)te32.th32ThreadID, (AxfHandle)te32.th32OwnerProcessID);
+    } while (Thread32Next(hThreadSnap, &te32));
+
+    CloseHandle(hThreadSnap);
+}
+
+AxfHandle GetCurrentProcess_Plugin(void)
+{
+    return (AxfHandle)GetCurrentProcess();
+}
+
+AxfHandle GetCurrentProcessId_Plugin(void)
+{
+    return (AxfHandle)GetCurrentProcessId();
+}
+
+void EnumerateProcesses_Plugin(void(*callback)(AxfHandle processId))
+{
+    const size_t maxsize = sizeof(DWORD) * 32 * 1024;
+    DWORD *pids = (DWORD*)malloc(maxsize);
+    DWORD needed=0;
+    if (EnumProcesses(pids, maxsize, &needed))
+    {
+        size_t cProcesses = needed / sizeof(DWORD);
+        for (size_t i = 0; i < cProcesses; i++)
+        {
+            callback((AxfHandle)pids[i]);
+        }
+    }
+    free(pids);
+}
+
 PluginInterfaceData::~PluginInterfaceData()
 {
     for (std::map<AxfExtension, ExtensionFactory>::const_iterator it = extensionCache.begin(); it != extensionCache.end(); ++it)
@@ -631,6 +1022,12 @@ PluginInterfaceData::~PluginInterfaceData()
     {
         Hookah::inst().UnhookFunction(*(it->get()));
     }
+
+    // clean up opened threads
+    for (set<AxfHandle>::iterator it = openedThreadHandles.begin(); it != openedThreadHandles.end(); ++it)
+    {
+        CloseHandle(*it);
+    }
 }
 
 PluginInterfaceWrapper::PluginInterfaceWrapper()
@@ -643,6 +1040,7 @@ PluginInterfaceWrapper::PluginInterfaceWrapper()
     pluginInterface.extension = new ExtensionInterface;
     pluginInterface.hook = new HookInterface;
     pluginInterface.memory = new MemoryInterface;
+    pluginInterface.thread = new ThreadInterface;
 
     pluginInterface.data->moduleHandle = 0;
     pluginInterface.data->log = LogFactory::inst().GetLogInterface();
@@ -656,12 +1054,15 @@ PluginInterfaceWrapper::PluginInterfaceWrapper()
     pluginInterface.log->GetLogLevel = GetLogLevel_Plugin;
     pluginInterface.log->Log = Log_Plugin;
     pluginInterface.log->Log2 = Log2_Plugin;
+    pluginInterface.log->LogBinaryData = PrintBinaryData_Plugin;
 
     pluginInterface.manager->GetUnloadedPluginList = GetUnloadedPluginList_Plugin;
     pluginInterface.manager->GetLoadedPluginList = GetLoadedPluginList_Plugin;
     pluginInterface.manager->Load = LoadPlugin_Plugin;
     pluginInterface.manager->Unload = UnloadPlugin_Plugin;
     pluginInterface.manager->Reload = ReloadPlugin_Plugin;
+    pluginInterface.manager->UnloadSelf = UnloadSelf_Plugin;
+    pluginInterface.manager->ReloadSelf = ReloadSelf_Plugin;
 
     pluginInterface.system->GetModuleHandle = GetModuleHandle_Plugin;
     pluginInterface.system->GetProcessInformation = GetProcessInformation_Plugin;
@@ -684,6 +1085,9 @@ PluginInterfaceWrapper::PluginInterfaceWrapper()
     pluginInterface.hook->UnhookFunction = UnhookFunction_Plugin;
     pluginInterface.hook->IsHooked = IsHooked_Plugin;
     pluginInterface.hook->GetOriginalFunction = GetOriginalFunction_Plugin;
+    pluginInterface.hook->SetBreakpointFunc = SetBreakpointFunc_Plugin;
+    pluginInterface.hook->SetBreakpointVar = SetBreakpointVar_Plugin;
+    pluginInterface.hook->DeleteBreakpoint = DeleteBreakpoint_Plugin;
 
     pluginInterface.memory->FindSignature = FindSignature_Plugin; 
     pluginInterface.memory->GetAllocationBase = GetAllocationBase_Plugin;
@@ -693,6 +1097,15 @@ PluginInterfaceWrapper::PluginInterfaceWrapper()
     pluginInterface.extension->IsExtensionAvailable = IsExtensionAvailable_Plugin;
     pluginInterface.extension->GetExtension = GetExtension_Plugin;
     pluginInterface.extension->ReleaseExtension = ReleaseExtension_Plugin;
+
+    pluginInterface.thread->GetCurrentThread = GetCurrentThread_Plugin;
+    pluginInterface.thread->GetCurrentThreadId = GetCurrentThreadID_Plugin;
+    pluginInterface.thread->OpenThread = OpenThread_Plugin;
+    pluginInterface.thread->CloseThread = CloseThread_Plugin;
+    pluginInterface.thread->EnumerateThreads = EnumerateThreads_Plugin;
+    pluginInterface.thread->GetCurrentProcess = GetCurrentProcess_Plugin;
+    pluginInterface.thread->GetCurrentProcessId = GetCurrentProcessId_Plugin;
+    pluginInterface.thread->EnumerateProcesses = EnumerateProcesses_Plugin;
 }
 
 PluginInterfaceWrapper::~PluginInterfaceWrapper()
@@ -705,6 +1118,7 @@ PluginInterfaceWrapper::~PluginInterfaceWrapper()
     delete pluginInterface.extension;
     delete pluginInterface.hook;
     delete pluginInterface.memory;
+    delete pluginInterface.thread;
 }
 
 Plugin::Plugin(const std::string &dir, const std::string &name)
@@ -728,7 +1142,7 @@ void Plugin::InternalLoad()
         ss << std::endl 
             << "pluginapi version: " << v << std::endl 
             <<  "AXF version: " << AXF_VERSION << std::endl
-            << "Plugin path: " << GetFilePath() << std::endl
+            << "Plugin path: " << GetFileDir() << std::endl
             << "Plugin filename: " << GetFileName() << std::endl;
             
         throw WSException(std::string("This plugin is compiled with a newer version of AXF and "  
@@ -736,6 +1150,7 @@ void Plugin::InternalLoad()
     }
     else
     {
+        GetPluginInterface().data->pluginName = GetFileName();
         if(OnInit() == AXFFALSE)
         {
             throw WSException(std::string("Failed to initialize (In OnInit): ") + GetFileName());

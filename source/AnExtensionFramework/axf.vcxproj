@@ -55,6 +55,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;ENIGMATOOL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>easyhook;$(SolutionDir)include;beaengine\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -71,7 +72,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;ENIGMATOOL_EXPORTS;PSAPI_VERSION=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>easyhook;$(SolutionDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>easyhook;$(SolutionDir)include;beaengine\include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
@@ -88,6 +89,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="beaengine\sources\BeaEngine.c" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="easyhook\LocalHook\acl.c" />
     <ClCompile Include="easyhook\LocalHook\alloc.c" />
@@ -133,6 +135,7 @@ ml.exe /D_WIN32 /c /Cx "%(FullPath)"</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="beaengine\include\beaengine\BeaEngine.h" />
     <ClInclude Include="extensionman\extension.h" />
     <ClInclude Include="extensionman\extensionplugin_c.h" />
     <ClInclude Include="hookah.h" />
