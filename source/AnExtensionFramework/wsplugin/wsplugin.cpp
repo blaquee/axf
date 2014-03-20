@@ -11,7 +11,6 @@
 #include <iterator>
 #include <limits>
 #include <TlHelp32.h>
-#include <Psapi.h>
 
 #undef max
 
