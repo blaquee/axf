@@ -86,6 +86,21 @@ INT __stdcall myMsgBox(HWND hwnd, LPSTR, LPSTR, UINT)
     return MB(hwnd, "You called the hooked msgbox", "It works", 0);
 }
 
+INT __stdcall MsgBoxBP(HWND hwnd, LPSTR, LPSTR, UINT)
+{
+    typedef INT (WINAPI *tMsgBox)(HWND,LPCSTR, LPCSTR, UINT);
+    pi.Log("CALL FROM BREAKPOINT!");
+    return 1;
+}
+
+void TestBp(AxfHandle threadId, AxfHandle processId)
+{
+    if (pi.GetCurrentProcessId() == processId)
+    {
+        pi.SetBreakpointFunc(threadId, 0, MessageBoxA, MsgBoxBP);
+    }
+}
+
 AxfBool OnInit(const PluginInterface *p)
 {
     pi = p;
@@ -185,6 +200,7 @@ AxfBool OnInit(const PluginInterface *p)
         pi.Log("Failed to hook MessageBoxA");
     }
 
+    // test sig scanning
     std::unique_ptr<AllocationInfo> allocBase = pi.GetAllocationBase((void*)&ExitWindowsEx);
     if(allocBase)
     {
@@ -220,6 +236,11 @@ AxfBool OnInit(const PluginInterface *p)
         pi.Log("Failed to obtain Allocation base for ExitWindowsEx\n");
     }
 
+    // test hardware breakpoint
+    //pi.EnumerateThreads(TestBp);
+    pi.SetBreakpointFunc(pi.GetCurrentThreadId(), 0, MessageBoxA, MsgBoxBP);
+    MessageBoxA(0, "testing", "should not disaply", 0);
+    pi.DeleteBreakpoint(pi.GetCurrentThreadId(), 0); // this shouldnt be neccessary once I add clean up code to axf
 
     pi.Log("test plugin loaded");
 
