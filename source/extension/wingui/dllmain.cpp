@@ -172,6 +172,9 @@ static INT_PTR __stdcall DialogCallback(HWND hwnd, UINT uMsg, WPARAM wparam, LPA
         case  IDC_REFRESHBUTTON:
             UpdatePluginLists(hwnd);
             return TRUE;
+        case IDC_EXITBUTTON:
+            ExitProcess(0);
+            return TRUE;
         }
         break;
     }

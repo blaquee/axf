@@ -100,7 +100,11 @@ void TestBp(AxfHandle threadId, AxfHandle processId)
         pi.SetBreakpointFunc(threadId, 0, MessageBoxA, MsgBoxBP);
     }
 }
-
+unsigned int bptestvar = 10;
+void TestBp(void *data)
+{
+    pi.Log("WTF");
+}
 AxfBool OnInit(const PluginInterface *p)
 {
     pi = p;
@@ -240,6 +244,19 @@ AxfBool OnInit(const PluginInterface *p)
     //pi.EnumerateThreads(TestBp);
     pi.SetBreakpointFunc(pi.GetCurrentThreadId(), 0, MessageBoxA, MsgBoxBP);
     MessageBoxA(0, "testing", "should not disaply", 0);
+    pi.DeleteBreakpoint(pi.GetCurrentThreadId(), 0); // this shouldnt be neccessary once I add clean up code to axf
+
+    // test hardware breakpoint for read/writing variable
+    
+    pi.SetBreakpointVar(pi.GetCurrentThreadId(), 0, AXFTRUE, AXFTRUE, 4, &bptestvar,
+        [](void *data)
+        {
+            /*unsigned int v = *(unsigned int*)data;
+            std::stringstream ss; ss << "Var was modified, new value: " << v;
+            pi.Log(ss.str());*/
+        printf("wtf\n");
+        }, &bptestvar);
+    bptestvar = pi.GetVersion();
     pi.DeleteBreakpoint(pi.GetCurrentThreadId(), 0); // this shouldnt be neccessary once I add clean up code to axf
 
     pi.Log("test plugin loaded");

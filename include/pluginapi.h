@@ -586,6 +586,10 @@ public:
     {
         return GetPluginInterface().system->GetModuleBase(name.c_str());
     }
+    void *GetModuleBase(const char *name) const
+    {
+        return GetPluginInterface().system->GetModuleBase(name);
+    }
     void *GetProcAddress(void *base, const std::string &name) const
     {
         return GetPluginInterface().system->GetProcAddress(base, name.c_str());
@@ -661,6 +665,11 @@ public:
     void Log(const std::string &s) const
     {
         GetPluginInterface().log->Log(GetPluginInterfacePtr(), s.c_str());
+    }
+    void Log(const char *s) const
+    {
+        if (!s) return;
+        GetPluginInterface().log->Log(GetPluginInterfacePtr(), s);
     }
     void Log(const LogLevel type, const std::string &s) const
     {
