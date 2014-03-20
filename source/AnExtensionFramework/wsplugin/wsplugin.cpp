@@ -992,18 +992,27 @@ AxfHandle GetCurrentProcessId_Plugin(void)
 
 void EnumerateProcesses_Plugin(void(*callback)(AxfHandle processId))
 {
-    const size_t maxsize = sizeof(DWORD) * 32 * 1024;
-    DWORD *pids = (DWORD*)malloc(maxsize);
-    DWORD needed=0;
-    if (EnumProcesses(pids, maxsize, &needed))
+    HANDLE hThreadSnap = INVALID_HANDLE_VALUE;
+    PROCESSENTRY32 pe32;
+
+    hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hThreadSnap == INVALID_HANDLE_VALUE)
+        return;
+
+    pe32.dwSize = sizeof(PROCESSENTRY32);
+
+    if (!Process32First(hThreadSnap, &pe32))
     {
-        size_t cProcesses = needed / sizeof(DWORD);
-        for (size_t i = 0; i < cProcesses; i++)
-        {
-            callback((AxfHandle)pids[i]);
-        }
+        CloseHandle(hThreadSnap);
+        return;
     }
-    free(pids);
+
+    do
+    {
+        callback((AxfHandle)pe32.th32ProcessID);
+    } while (Process32Next(hThreadSnap, &pe32));
+
+    CloseHandle(hThreadSnap);
 }
 
 PluginInterfaceData::~PluginInterfaceData()
