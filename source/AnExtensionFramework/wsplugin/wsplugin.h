@@ -82,6 +82,25 @@ struct EventFunctionData
     }
 };
 
+struct HardwareBreakpoint
+{
+    std::set<AxfHandle> hookedTids;
+    void *handler[4];
+    EventFunction handlerVar[4];
+    void *userdata[4];
+    std::unordered_map<AxfHandle, CONTEXT> threadContext;
+
+    HardwareBreakpoint()
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            handler[i] = 0;
+            handlerVar[i] = 0;
+            userdata[i] = 0;
+        }
+    }
+};
+
 // private data do not expose
 struct PluginInterfaceData
 {
@@ -96,6 +115,8 @@ struct PluginInterfaceData
     std::map<AxfExtension, ExtensionFactory> extensionCache;
 
     std::set<AxfHandle> openedThreadHandles;
+
+    HardwareBreakpoint hwbpData;
 
     ~PluginInterfaceData();
 };
@@ -178,7 +199,8 @@ typedef struct _HookInterface
     /* breakpoints */
     void (*SetBreakpointFunc)(const struct _PluginInterface*, AxfHandle threadId, unsigned int bpSlot, void *func, void *handler);
     void (*SetBreakpointVar)(const struct _PluginInterface*, AxfHandle threadId, unsigned int bpSlot, AxfBool read, AxfBool write, int size, void *varAddr, EventFunction handler, void *userdata);
-    void (*DeleteBreakpoint)(AxfHandle threadId, unsigned int bpSlot);
+    void (*ResetBreakpoint)(const struct _PluginInterface*);
+    void (*DeleteBreakpoint)(const struct _PluginInterface *, AxfHandle threadId, unsigned int bpSlot);
 } HookInterface;
 
 typedef struct _MemoryInterface

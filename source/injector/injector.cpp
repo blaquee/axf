@@ -648,8 +648,9 @@ static void showSplashScreen(HINSTANCE hInstance)
 #endif
 }
 
-inline DWORD GetPID(const wchar_t *processName)
+inline vector<DWORD> GetPIDs(const wchar_t *processName)
 {
+    vector<DWORD> pids;
 
     HANDLE th = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if(th != INVALID_HANDLE_VALUE)
@@ -664,15 +665,14 @@ inline DWORD GetPID(const wchar_t *processName)
         {
             if(std::wstring(PathFindFileName(pe.szExeFile)) == processName)
             {
-                CloseHandle(th);
-                return pe.th32ProcessID;
+                pids.push_back(pe.th32ProcessID);
             }
             next = Process32Next(th, &pe);
         }
         CloseHandle(th);
     }
 
-    return 0xFFFFFFFF;
+    return pids;
 }
 
 inline void Tokenize(const string & str, vector<string> & tokens, const string & delimiters = " ")
@@ -752,21 +752,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         {
             if(!processName.empty())
             {
-                DWORD pid = GetPID(processName.c_str());
-                if(pid != 0xFFFFFFFF)
+                vector<DWORD> pids = GetPIDs(processName.c_str());
+                if(!pids.empty())
                 {
                     getCurrentDir();
-
-                    wchar_t dllName[] = DLL_NAME;
-                    wchar_t *dllPath = new wchar_t[wcslen(currentDir) + sizeof(dllName)/sizeof(wchar_t) + 2];
-                    wcscpy(dllPath, currentDir);
-                    wcscat(dllPath, dllName);
-                    HANDLE hp = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
-                    if(hp == 0 || hp == INVALID_HANDLE_VALUE)
-                        MessageBoxW(0, L"Bad again", L"Bad again", 0);
-                    InjectDLL_RemoteThread(hp, dllPath);
-                    CloseHandle(hp);
-                    hasProcessName = true;
+                    for (size_t i = 0; i < pids.size(); i++)
+                    {
+                        DWORD pid = pids[i];
+                        wchar_t dllName[] = DLL_NAME;
+                        wchar_t *dllPath = new wchar_t[wcslen(currentDir) + sizeof(dllName) / sizeof(wchar_t)+2];
+                        wcscpy(dllPath, currentDir);
+                        wcscat(dllPath, dllName);
+                        HANDLE hp = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+                        if (hp == 0 || hp == INVALID_HANDLE_VALUE)
+                        {
+                            MessageBoxW(0, L"Failed to inject", L"FAILED", 0);
+                        }
+                        else
+                        {
+                            hasProcessName = true;
+                            InjectDLL_RemoteThread(hp, dllPath);
+                            CloseHandle(hp);
+                        }
+                    }
                 }
                 else
                 {
@@ -798,8 +806,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 InjectDLL_RemoteThread(pi.hProcess, dllPath);*/
             
             }
-            else
-                MessageBoxW(NULL, L"Can't open file", L"ERROR", NULL);
+            //else
+            //    MessageBoxW(NULL, L"Can't open file", L"ERROR", NULL);
         }
         else
         {
@@ -850,7 +858,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
                     if (SUCCEEDED(hres))
                     { 
-                        PROCESS_INFORMATION process;
+                        //PROCESS_INFORMATION process;
                         STARTUPINFO start;
                         memset(&start,0,sizeof(start));
                         start.cb = sizeof(start);

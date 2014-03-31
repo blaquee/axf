@@ -90,7 +90,9 @@ INT __stdcall MsgBoxBP(HWND hwnd, LPSTR, LPSTR, UINT)
 {
     typedef INT (WINAPI *tMsgBox)(HWND,LPCSTR, LPCSTR, UINT);
     pi.Log("BREAKPOINT ON MESSAGEBOXA!");
-    return 1;
+    INT i = MessageBoxA(hwnd, "Breakpointed", "Breakpointed!", 0);
+    pi.ResetBreakpoint();
+    return i;
 }
 
 __declspec(noinline)
@@ -102,7 +104,12 @@ void printit(unsigned int *i)
 }
 
 __declspec(noinline)
-void assignit(unsigned int *i)
+void assignit(unsigned int *i, unsigned int n)
+{
+    *i = n;
+}
+__declspec(noinline)
+void assignit2(unsigned int *i)
 {
     *i = 1337;
 }
@@ -246,21 +253,24 @@ AxfBool OnInit(const PluginInterface *p)
     pi.SetBreakpointFunc(pi.GetCurrentThreadId(), 0, MessageBoxA, MsgBoxBP);
     MessageBoxA(0, "should not display", "testing BP", 0);
     MessageBoxA(0, "should not display AGAIN", "testing BP", 0);
-    pi.DeleteBreakpoint(pi.GetCurrentThreadId(), 0); // this shouldnt be neccessary once I add clean up code to axf
+    pi.DeleteBreakpoint(pi.GetCurrentThreadId(), 0);
     MessageBoxA(0, "should display because bp was deleted", "testing BP", 0);
 
     // test hardware breakpoint for read/writing variable
     unsigned int bptestvar = 10;
-    pi.SetBreakpointVar(pi.GetCurrentThreadId(), 0, AXFTRUE, AXFTRUE, 4, &bptestvar,
+    // Note: data BP does not work with "read" because the handler will trigger an infinite loop since it requires reading
+    pi.SetBreakpointVar(pi.GetCurrentThreadId(), 1, AXFFALSE, AXFTRUE, 4, &bptestvar,
         [](void *data)
         {
-            std::stringstream ss; ss << "Data pointer is " << data;
+            std::stringstream ss; ss << "Data after assignment is " << *(unsigned int*)data;
             pi.Log(ss.str());
+            //pi.ResetBreakpoint();
         }, &bptestvar);
     // the following 2 lines use a compiler optimization workaround
-    assignit(&bptestvar); // this should trigger our breakpoint
+    assignit(&bptestvar, 123); // this should trigger our breakpoint
+    assignit2(&bptestvar); // this should trigger our breakpoint
     printit(&bptestvar);  // trigger read bp
-    pi.DeleteBreakpoint(pi.GetCurrentThreadId(), 0); // this shouldnt be neccessary once I add clean up code to axf
+    pi.DeleteBreakpoint(pi.GetCurrentThreadId(), 1); // remove breakpoint to prevent breaking on stale data
 
     pi.Log("test plugin loaded");
 

@@ -389,7 +389,8 @@ typedef struct _HookInterface
     /* breakpoints */
     void(*SetBreakpointFunc)(const struct _PluginInterface*, AxfHandle threadId, unsigned int bpSlot, void *func, void *handler);
     void(*SetBreakpointVar) (const struct _PluginInterface*, AxfHandle threadId, unsigned int bpSlot, AxfBool read, AxfBool write, int size, void *varAddr, EventFunction handler, void *userdata);
-    void(*DeleteBreakpoint)(AxfHandle threadId, unsigned int bpSlot);
+    void(*ResetBreakpoint)(const struct _PluginInterface*);
+    void(*DeleteBreakpoint)(const struct _PluginInterface*, AxfHandle threadId, unsigned int bpSlot);
 } HookInterface;
 
 typedef struct _MemoryInterface
@@ -814,9 +815,13 @@ public:
     {
         GetPluginInterface().hook->SetBreakpointVar(GetPluginInterfacePtr(), threadId, bpSlot, read, write, size, varAddr, handler, userdata);
     }
+    void ResetBreakpoint()
+    {
+        GetPluginInterface().hook->ResetBreakpoint(GetPluginInterfacePtr());
+    }
     void DeleteBreakpoint(AxfHandle threadId, unsigned int bpSlot)
     {
-        GetPluginInterface().hook->DeleteBreakpoint(threadId, bpSlot);
+        GetPluginInterface().hook->DeleteBreakpoint(GetPluginInterfacePtr(), threadId, bpSlot);
     }
 };
 

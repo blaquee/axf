@@ -395,14 +395,9 @@ void PrintBinaryData_Plugin(const struct _PluginInterface *pi, const char *funct
 
 
 static void *bpMasterHandler=0; // RemoveVectoredExceptionHandler
-static void *bpWatchAddr[4] = { 0, 0, 0, 0 };
-static void *bpHandler[4] = { 0, 0, 0, 0 };
-static EventFunction bpHandlerVar[4] = { 0, 0, 0, 0 };
-static void *bpUserdata[4] = { 0, 0, 0, 0 };
-static DISASM bpDisasm[4];
-static const PluginInterface *bpSlotTakenBy[4] = { 0, 0, 0, 0 };
-static bool bpIsEnabled[4] = { false, false, false, false };
-
+static CRITICAL_SECTION bpLock;
+static bool bpLockInit = false;
+static std::unordered_map<AxfHandle, std::set<PluginInterfaceData*> > bpByTID;
 static LONG NTAPI BreakpointHandler(struct _EXCEPTION_POINTERS *exception)
 {
     // Then it is not our hardware breakpoint
@@ -413,19 +408,36 @@ static LONG NTAPI BreakpointHandler(struct _EXCEPTION_POINTERS *exception)
     int slotBits = exception->ContextRecord->Dr6 & 0xF; // bits 0-3 contain the slot index
     bool handled = false;
 
-    std::wstringstream ss; ss << "slotbits " << slotBits << " dr7 " << exception->ContextRecord->Dr7;
-    MessageBoxW(0, ss.str().c_str(), L"IN MASTER HANDLER", 0);
+    //std::wstringstream ss; ss << "slotbits " << slotBits << " dr7 " << exception->ContextRecord->Dr7;
+    //MessageBoxW(0, ss.str().c_str(), L"IN MASTER HANDLER", 0);
     for (int slot = 0; slot < 4;slot++)
     {
         if (slotBits & 1)
         {
-            if (bpHandlerVar[slot]) //databreak point
+            std::set<PluginInterfaceData*> *pis = 0;
+            Lock l(&bpLock);
+            auto piIT = bpByTID.find((AxfHandle)GetCurrentThreadId());
+            if (piIT != bpByTID.end())
             {
-                bpHandlerVar[slot](bpUserdata[slot]);
+                pis = &piIT->second;
             }
-            else if (bpHandler[slot]) // code breakpoint
+            l.Unlock();
+            if (pis)
             {
-                exception->ContextRecord->Eip = (UINT_PTR)bpHandler[slot];
+                for (auto it = pis->cbegin(); it != pis->cend(); ++it)
+                {
+                    HardwareBreakpoint &bp = (*it)->hwbpData;
+                    if (bp.handlerVar[slot]) //databreak point
+                    {
+                        //exception->ContextRecord->Dr7 &= ~(1 << (slot * 2));
+                        bp.handlerVar[slot](bp.userdata[slot]);
+                    }
+                    else if (bp.handler[slot]) // code breakpoint
+                    {
+                        exception->ContextRecord->Eip = (UINT_PTR)bp.handler[slot];
+                        exception->ContextRecord->Dr7 &= ~(1 << (slot * 2));
+                    }
+                }
             }
             handled = true;
         }
@@ -446,6 +458,11 @@ void SetBreakpointFunc_Plugin(const struct _PluginInterface *pi, AxfHandle threa
         bpMasterHandler = AddVectoredExceptionHandler(1, BreakpointHandler);
         if (!bpMasterHandler) return;
     }
+    if (!bpLockInit)
+    {
+        InitializeCriticalSection(&bpLock);
+        bpLockInit = true;
+    }
 
     DWORD tid = (DWORD)threadId;
     bool isCurrentThread = (tid == GetCurrentThreadId());
@@ -455,13 +472,14 @@ void SetBreakpointFunc_Plugin(const struct _PluginInterface *pi, AxfHandle threa
     c.ContextFlags = CONTEXT_DEBUG_REGISTERS; //we need only debug registers
 
     // suspend thread to avoid crash
-    if (!isCurrentThread)
+    /*if (!isCurrentThread)
     {
         SuspendThread(hthread);
-    }
+    }*/
 
     GetThreadContext(hthread, &c);
     c.Dr6 = 0;           //clear debug status register (only bits 0-3 of dr6 are cleared by processor)
+    c.Dr7 &= ~(15 << ((bpSlot * 4) + 16));
     c.Dr7 |= 1 << (bpSlot * 2); //set bit to 1 - enable local breakpoint.
     switch (bpSlot)
     {
@@ -477,15 +495,30 @@ void SetBreakpointFunc_Plugin(const struct _PluginInterface *pi, AxfHandle threa
     SetThreadContext(hthread, &c); //setup debug registers.
 
     // save info
-    bpWatchAddr[bpSlot] = func;
-    bpHandler[bpSlot] = handler;
-    bpHandlerVar[bpSlot] = 0;
-    bpUserdata[bpSlot] = 0;
-    bpSlotTakenBy[bpSlot] = pi;
+    Lock l(&bpLock);
+    auto pis = bpByTID.find(threadId);
+    if (pis == bpByTID.end())
+    {
+        bpByTID[threadId] = set<PluginInterfaceData*>();
+        pis = bpByTID.find(threadId);
+    }
+    auto piIt = pis->second.find(pi->data);
+    if (piIt == pis->second.end())
+    {
+        pis->second.insert(pi->data);
+        piIt = pis->second.find(pi->data);
+    }
+    l.Unlock();
+    HardwareBreakpoint &bp = (*piIt)->hwbpData;
+    bp.handler[bpSlot] = handler;
+    bp.handlerVar[bpSlot] = 0;
+    bp.userdata[bpSlot] = 0;
+    bp.hookedTids.insert(threadId);
+    bp.threadContext[threadId] = c;
 
     if (!isCurrentThread)
     {
-        ResumeThread(hthread);
+        //ResumeThread(hthread);
         CloseHandle(hthread);
     }
 }
@@ -497,12 +530,17 @@ void SetBreakpointVar_Plugin(const struct _PluginInterface *pi, AxfHandle thread
 {
     if (bpSlot > 3) return;
     if (!(size == 1 || size == 2 || size == 4 || size == 8)) return;
-    if (!read && !write) { pi->hook->DeleteBreakpoint(threadId, bpSlot); return;  }
+    if (!read && !write) { pi->hook->DeleteBreakpoint(pi, threadId, bpSlot); return;  }
 
     if (bpMasterHandler == 0)
     {
         bpMasterHandler = AddVectoredExceptionHandler(1, BreakpointHandler);
         if (!bpMasterHandler) return;
+    }
+    if (!bpLockInit)
+    {
+        InitializeCriticalSection(&bpLock);
+        bpLockInit = true;
     }
 
     DWORD tid = (DWORD)threadId;
@@ -513,10 +551,10 @@ void SetBreakpointVar_Plugin(const struct _PluginInterface *pi, AxfHandle thread
     c.ContextFlags = CONTEXT_DEBUG_REGISTERS; //we need only debug registers
 
     // suspend thread to avoid crash
-    if (!isCurrentThread)
+    /*if (!isCurrentThread)
     {
         SuspendThread(hthread);
-    }
+    }*/
 
     int rwBits = 0;
     if (read && !write) rwBits = 0;
@@ -569,23 +607,60 @@ void SetBreakpointVar_Plugin(const struct _PluginInterface *pi, AxfHandle thread
     SetThreadContext(hthread, &c); //setup debug registers.
 
     // save info
-    bpWatchAddr[bpSlot] = varAddr;
-    bpHandler[bpSlot] = 0;
-    bpHandlerVar[bpSlot] = handler;
-    bpUserdata[bpSlot] = userdata;
-    bpSlotTakenBy[bpSlot] = pi;
-
-    memset(&bpDisasm[bpSlot], 0, sizeof(DISASM));
+    Lock l(&bpLock);
+    auto pis = bpByTID.find(threadId);
+    if (pis == bpByTID.end())
+    {
+        bpByTID[threadId] = set<PluginInterfaceData*>();
+        pis = bpByTID.find(threadId);
+    }
+    auto piIt = pis->second.find(pi->data);
+    if (piIt == pis->second.end())
+    {
+        pis->second.insert(pi->data);
+        piIt = pis->second.find(pi->data);
+    }
+    l.Unlock();
+    HardwareBreakpoint &bp = (*piIt)->hwbpData;
+    bp.handler[bpSlot] = 0;
+    bp.handlerVar[bpSlot] = handler;
+    bp.userdata[bpSlot] = userdata;
+    bp.hookedTids.insert(threadId);
+    bp.threadContext[threadId] = c;
 
     if (!isCurrentThread)
     {
-        ResumeThread(hthread);
+        //ResumeThread(hthread);
         CloseHandle(hthread);
     }
 }
 
+void ResetBreakpoint_Plugin(const struct _PluginInterface *pi)
+{
+    AxfHandle threadId = (AxfHandle)GetCurrentThreadId();
+    Lock l(&bpLock);
+    auto pis = bpByTID.find(threadId);
+    if (pis == bpByTID.end())
+    {
+        bpByTID[threadId] = set<PluginInterfaceData*>();
+        pis = bpByTID.find(threadId);
+    }
+    auto piIt = pis->second.find(pi->data);
+    if (piIt == pis->second.end())
+    {
+        pis->second.insert(pi->data);
+        piIt = pis->second.find(pi->data);
+    }
+    l.Unlock();
+    HardwareBreakpoint &bp = (*piIt)->hwbpData;
+    auto it = bp.threadContext.find(threadId);
+    if (it != bp.threadContext.end())
+    {
+        SetThreadContext(GetCurrentThread(), &it->second);
+    }
+}
 
-void DeleteBreakpoint_Plugin(AxfHandle threadId, unsigned int bpSlot)
+void DeleteBreakpoint_Plugin(const struct _PluginInterface *pi, AxfHandle threadId, unsigned int bpSlot)
 {
     if (bpSlot > 3) return;
 
@@ -597,10 +672,10 @@ void DeleteBreakpoint_Plugin(AxfHandle threadId, unsigned int bpSlot)
     c.ContextFlags = CONTEXT_DEBUG_REGISTERS; //we need only debug registers
 
     // suspend thread to avoid crash
-    if (!isCurrentThread)
+    /*if (!isCurrentThread)
     {
         SuspendThread(hthread);
-    }
+    }*/
 
     GetThreadContext(hthread, &c);
     c.Dr6 = 0;           //clear debug status register (only bits 0-3 of dr6 are cleared by processor)
@@ -624,20 +699,36 @@ void DeleteBreakpoint_Plugin(AxfHandle threadId, unsigned int bpSlot)
     SetThreadContext(hthread, &c); //setup debug registers.
 
     // clear info
-    bpWatchAddr[bpSlot] = 0;
-    bpHandler[bpSlot] = 0;
-    bpHandlerVar[bpSlot] = 0;
-    bpUserdata[bpSlot] = 0;
-    bpSlotTakenBy[bpSlot] = 0;
+
+    Lock l(&bpLock);
+    auto pis = bpByTID.find(threadId);
+    if (pis == bpByTID.end())
+    {
+        bpByTID[threadId] = set<PluginInterfaceData*>();
+        pis = bpByTID.find(threadId);
+    }
+    auto piIt = pis->second.find(pi->data);
+    if (piIt == pis->second.end())
+    {
+        pis->second.insert(pi->data);
+        piIt = pis->second.find(pi->data);
+    }
+    l.Unlock();
+    HardwareBreakpoint &bp = (*piIt)->hwbpData;
+    bp.handler[bpSlot] = 0;
+    bp.handlerVar[bpSlot] = 0;
+    bp.userdata[bpSlot] = 0;
+    bp.hookedTids.insert(threadId);
+    bp.threadContext[threadId] = c;
 
     if (!isCurrentThread)
     {
-        ResumeThread(hthread);
+        //ResumeThread(hthread);
         CloseHandle(hthread);
     }
-
-    std::wstringstream ss; ss << " dr7 " << c.Dr7;
-    MessageBoxW(0, ss.str().c_str(), L"AFTER CLEARING", 0);
+    
+    //std::wstringstream ss; ss << " dr7 " << c.Dr7;
+    //MessageBoxW(0, ss.str().c_str(), L"AFTER CLEARING", 0);
 }
 
 size_t GetExtensionList_Plugin(String *strs, size_t sizeofStrs)
@@ -1044,6 +1135,19 @@ PluginInterfaceData::~PluginInterfaceData()
     {
         CloseHandle(*it);
     }
+
+    // clean up breakpoints
+    Lock bpL(&bpLock);
+    for (set<AxfHandle>::iterator it = hwbpData.hookedTids.cbegin(); it != hwbpData.hookedTids.cend(); ++it)
+    {
+        auto pis = bpByTID.find(*it);
+        if (pis != bpByTID.cend())
+        {
+            //MessageBoxW(0, L"earsed", L"erased", 0);
+            pis->second.erase(this);
+        }
+    }
+    bpL.Unlock();
 }
 
 PluginInterfaceWrapper::PluginInterfaceWrapper()
@@ -1103,6 +1207,7 @@ PluginInterfaceWrapper::PluginInterfaceWrapper()
     pluginInterface.hook->GetOriginalFunction = GetOriginalFunction_Plugin;
     pluginInterface.hook->SetBreakpointFunc = SetBreakpointFunc_Plugin;
     pluginInterface.hook->SetBreakpointVar = SetBreakpointVar_Plugin;
+    pluginInterface.hook->ResetBreakpoint = ResetBreakpoint_Plugin;
     pluginInterface.hook->DeleteBreakpoint = DeleteBreakpoint_Plugin;
 
     pluginInterface.memory->FindSignature = FindSignature_Plugin; 
