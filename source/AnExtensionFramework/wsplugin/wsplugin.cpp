@@ -395,7 +395,7 @@ void PrintBinaryData_Plugin(const struct _PluginInterface *pi, const char *funct
 
 
 static void *bpMasterHandler=0; // RemoveVectoredExceptionHandler
-static CRITICAL_SECTION bpLock;
+static CRITICAL_SECTION bpLock; // bpLock does not needs to be explicitly deleted because the OS will take care of it on exit
 static bool bpLockInit = false;
 static std::unordered_map<AxfHandle, std::set<PluginInterfaceData*> > bpByTID;
 static LONG NTAPI BreakpointHandler(struct _EXCEPTION_POINTERS *exception)
@@ -1137,17 +1137,19 @@ PluginInterfaceData::~PluginInterfaceData()
     }
 
     // clean up breakpoints
-    Lock bpL(&bpLock);
-    for (set<AxfHandle>::iterator it = hwbpData.hookedTids.cbegin(); it != hwbpData.hookedTids.cend(); ++it)
+    if (bpLockInit) 
     {
-        auto pis = bpByTID.find(*it);
-        if (pis != bpByTID.cend())
+        Lock bpL(&bpLock);
+        for (set<AxfHandle>::iterator it = hwbpData.hookedTids.cbegin(); it != hwbpData.hookedTids.cend(); ++it)
         {
-            //MessageBoxW(0, L"earsed", L"erased", 0);
-            pis->second.erase(this);
+            auto pis = bpByTID.find(*it);
+            if (pis != bpByTID.cend())
+            {
+                //MessageBoxW(0, L"earsed", L"erased", 0);
+                pis->second.erase(this);
+            }
         }
     }
-    bpL.Unlock();
 }
 
 PluginInterfaceWrapper::PluginInterfaceWrapper()
