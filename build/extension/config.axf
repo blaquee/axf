@@ -3,7 +3,7 @@
     [
 		// add new extensions here for auto loading
         // note: wingui should be last in the list
-        "consolelogger_ext.dll", "wingui.dll"
+        "winconsole_ext.dll", "wingui.dll"
     ],
     
     "autoruns" :

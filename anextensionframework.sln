@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Public Header", "Public Header", "{91928265-7492-40F7-B042-BB5A53AC6BBD}"
 	ProjectSection(SolutionItems) = preProject
 		include\ext_memoryinterface.h = include\ext_memoryinterface.h
@@ -31,6 +33,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "python_ext", "source\extension\python_ext\python_ext.vcxproj", "{BAB85E66-37A2-4694-A962-A191E5721B90}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "filelogger_ext", "source\extension\filelogger_ext\filelogger_ext.vcxproj", "{0C5F5A5C-E3EF-4634-9290-C30484AA3F0E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "winconsole_ext", "source\extension\winconsole_ext\winconsole_ext.vcxproj", "{DAA02054-A748-42A3-8878-229E3E5DA00C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -104,6 +108,12 @@ Global
 		{0C5F5A5C-E3EF-4634-9290-C30484AA3F0E}.Release|Win32.ActiveCfg = Release|Win32
 		{0C5F5A5C-E3EF-4634-9290-C30484AA3F0E}.Release|Win32.Build.0 = Release|Win32
 		{0C5F5A5C-E3EF-4634-9290-C30484AA3F0E}.Release|x64.ActiveCfg = Release|Win32
+		{DAA02054-A748-42A3-8878-229E3E5DA00C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DAA02054-A748-42A3-8878-229E3E5DA00C}.Debug|Win32.Build.0 = Debug|Win32
+		{DAA02054-A748-42A3-8878-229E3E5DA00C}.Debug|x64.ActiveCfg = Debug|Win32
+		{DAA02054-A748-42A3-8878-229E3E5DA00C}.Release|Win32.ActiveCfg = Release|Win32
+		{DAA02054-A748-42A3-8878-229E3E5DA00C}.Release|Win32.Build.0 = Release|Win32
+		{DAA02054-A748-42A3-8878-229E3E5DA00C}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -115,6 +125,7 @@ Global
 		{831E881F-4688-43F1-8EB2-AF7AE59658A8} = {3921B1FD-4A80-4A51-BEA7-B2B1D793B52E}
 		{BAB85E66-37A2-4694-A962-A191E5721B90} = {3921B1FD-4A80-4A51-BEA7-B2B1D793B52E}
 		{0C5F5A5C-E3EF-4634-9290-C30484AA3F0E} = {3921B1FD-4A80-4A51-BEA7-B2B1D793B52E}
+		{DAA02054-A748-42A3-8878-229E3E5DA00C} = {3921B1FD-4A80-4A51-BEA7-B2B1D793B52E}
 		{C6C0C008-7DAF-4D53-ADC1-1E67B7E853C6} = {A4E03C93-145C-45C4-B5A4-F1491398DD87}
 		{FF5CDD0F-67FA-4B33-B0F1-D57C8283B00B} = {A4E03C93-145C-45C4-B5A4-F1491398DD87}
 	EndGlobalSection
