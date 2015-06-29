@@ -1,0 +1,6 @@
+build/
+ipch/axf-cc4100d2/anextensionframework-36b493f8.ipch
+source/extension/angelscript_ext/Release/angelscript_ext.tlog/angelscript_ext.lastbuildstate
+*.sdf
+source/extension/angelscript_ext/Release/angelscript_ext.tlog/cl.command.1.tlog
+source/extension/angelscript_ext/Release/angelscript_ext.tlog/unsuccessfulbuild
