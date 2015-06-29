@@ -62,7 +62,7 @@ typedef struct _ExtensionDescription
     unsigned int version;  /* the version of this plugin */
     unsigned int pluginapiVersion; /* the version of the pluginapi this plugin is using, must be AXF_API_VERSION (was AXF_PLUGIN_VERSION) */
 
-    WsBool (*OnInit)(const struct _PluginInterface*, const struct _ExtenderInterface*);  /* entry point, cdecl only */
+    AxfBool (*OnInit)(const struct _PluginInterface*, const struct _ExtenderInterface*);  /* entry point, cdecl only */
 
     /* optional info */ 
     const char *name;
@@ -95,9 +95,9 @@ typedef struct _ExtensionDescription
 /* called when the plugin gets loaded
  the plugin cannot be loaded if this function isn't implemented 
 
- return WSTRUE for success, otherwise return WSFALSE
+ return AXFTRUE for success, otherwise return AXFFALSE
  */
-static WsBool OnInitExtension(const struct _PluginInterface *, const struct _ExtenderInterface*);
+static AxfBool OnInitExtension(const struct _PluginInterface *, const struct _ExtenderInterface*);
 
 
 
@@ -115,8 +115,8 @@ static WsBool OnInitExtension(const struct _PluginInterface *, const struct _Ext
 /************************************************************************/
 /* Data Types                                                           */
 /************************************************************************/
-typedef WsExtension (*ExtensionFactoryCreate)();
-typedef void (*ExtensionFactoryDestroy)(WsExtension);
+typedef AxfExtension (*ExtensionFactoryCreate)();
+typedef void (*ExtensionFactoryDestroy)(AxfExtension);
 
 typedef struct _ExtensionFactory
 {
@@ -136,19 +136,19 @@ typedef struct _PluginData
     int clientVersion; 
 
     /* sets this to non-null to signify a successful load, it can be a pointer of any type */
-    WsHandle clientHandle; 
+    AxfHandle clientHandle; 
 
-    /* set this function to non-null to signify a successful load, the WsHandle argument is the clientHandle */
-    void(*OnPluginUnload)(WsHandle); 
+    /* set this function to non-null to signify a successful load, the AxfHandle argument is the clientHandle */
+    void(*OnPluginUnload)(AxfHandle); 
 
-    /* set to WSTRUE if OnInit returns WSTRUE, otherwise set to WSFALSE*/
-    WsBool initSuccess; 
+    /* set to AXFTRUE if OnInit returns AXFTRUE, otherwise set to AXFFALSE*/
+    AxfBool initSuccess; 
 
     /* PluginData inputs */
     PluginInterface *pluginInterface;
     const char *name;
     const char *fileExtension;
-    WsBool (*GetBinary)(struct _PluginData*, PluginBinary*);
+    AxfBool (*GetBinary)(struct _PluginData*, PluginBinary*);
     void (*ReleaseBinary)(PluginBinary*);
 } PluginData;
 
@@ -169,9 +169,9 @@ typedef void (*LogFormatterFunc)(String **, LogLevel, const char *);
     Param1: Input log level
     Param2: Input string
 
-    Return: WSTRUE to accept the input string, otherwise reject it
+    Return: AXFTRUE to accept the input string, otherwise reject it
 */
-typedef WsBool (*LogFilterFunc)(LogLevel, const char *);
+typedef AxfBool (*LogFilterFunc)(LogLevel, const char *);
 
 /************************************************************************/
 /* Extender Interface                                                   */

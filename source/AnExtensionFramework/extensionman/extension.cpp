@@ -82,7 +82,7 @@ namespace
         virtual ~LogFilterExt(){}
         virtual bool Filter(Log::Level level, const std::string &s)
         {
-            if(filter((LogLevel)level, s.c_str()) == WSTRUE)
+            if(filter((LogLevel)level, s.c_str()) == AXFTRUE)
                 return true;
             else
                 return false;

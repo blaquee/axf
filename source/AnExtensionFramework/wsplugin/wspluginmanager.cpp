@@ -13,7 +13,7 @@
 
 // this list defines the names that the plugin manager should not show
 // forbidden names must be in lowercase or else it won't work!
-#define FORBIDDEN_PLUGINS { L"__init__.py", L"pluginapi.py" }
+const wchar_t *FORBIDDEN_PLUGINS[] = { L"__init__.py", L"pluginapi.py" };
 
 using namespace std;
 
@@ -63,6 +63,7 @@ PluginManager::~PluginManager()
     for_each(loadedPlugins.begin(), loadedPlugins.end(), DeleteFunc());
 
     loadedPlugins.clear();
+    DeleteCriticalSection(&mutex);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -273,7 +274,7 @@ vector<string> PluginManager::GetPluginList() const
 {
     vector<string> pluginNames;
 
-    ::GetPluginList<string>(pluginNames, GetPluginDirectory(), "", 0, 0);
+    ::GetPluginList<string>(pluginNames, GetPluginDirectory(), "", FORBIDDEN_PLUGINS, sizeof(FORBIDDEN_PLUGINS)/sizeof(wchar_t*));
 
     return pluginNames;
 

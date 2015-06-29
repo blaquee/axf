@@ -2,16 +2,22 @@
 #include <shlwapi.h>
 #include <string.h>
 #include <string>
+#include <sstream>
+#include <fstream>
 #include <ObjBase.h>
 #include <ObjIdl.h>
 #include <Shobjidl.h>
 #include <Shlwapi.h>
+#include <TlHelp32.h>
 
 #include "regkey.h"
 
 #define REGISTRY_DIR L"Software\\AXF"
 
 #define DLL_NAME L"\\AnExtensionFramework.dll"
+
+// extra paths in the current working dir to append to the PATH env variable
+//static const wchar_t *EXTRA_PATHS[] =  { L"python" };
 
 //#define SPLASH_SCREEN
 //#include "Splash.h"
@@ -523,8 +529,6 @@ inline basic_string<wchar_t> GetDirFromString(const basic_string<wchar_t> &str)
     return pos != basic_string<wchar_t>::npos ? str.substr( 0,  pos+1 ) : L"";
 }
 
-
-
 static bool openFile(PROCESS_INFORMATION &pi)
 {
 
@@ -644,6 +648,33 @@ static void showSplashScreen(HINSTANCE hInstance)
 #endif
 }
 
+inline vector<DWORD> GetPIDs(const wchar_t *processName)
+{
+    vector<DWORD> pids;
+
+    HANDLE th = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if(th != INVALID_HANDLE_VALUE)
+    {
+        PROCESSENTRY32 pe;
+        pe.dwSize = sizeof(PROCESSENTRY32);
+
+
+        BOOL next = Process32First(th, &pe);
+
+        while(next)
+        {
+            if(std::wstring(PathFindFileName(pe.szExeFile)) == processName)
+            {
+                pids.push_back(pe.th32ProcessID);
+            }
+            next = Process32Next(th, &pe);
+        }
+        CloseHandle(th);
+    }
+
+    return pids;
+}
+
 inline void Tokenize(const string & str, vector<string> & tokens, const string & delimiters = " ")
 {
     string::size_type lastPos = str.find_first_not_of(delimiters, 0);
@@ -678,6 +709,15 @@ inline string Join(const vector<string > & seq, const string & seperator)
     return res;
 }
 
+inline wstring ExePath() 
+{
+    wchar_t buffer[MAX_PATH];
+    GetModuleFileNameW( NULL, buffer, MAX_PATH );
+    wstring::size_type pos = wstring( buffer ).find_last_of( L"\\/" );
+    return wstring( buffer ).substr( 0, pos);
+}
+
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd )
 {
     CoInitialize(0);
@@ -687,7 +727,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     vector<string> tokens;
 
-    Tokenize(lpCmdLine, tokens, " ");
+    
 
     si.cb = sizeof(STARTUPINFO);
     si.lpReserved = NULL;
@@ -703,135 +743,181 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcscpy(dllPath, currentDir);
     wcscat(dllPath, dllName);
 
-    if(tokens.empty())
+    std::wifstream processFile(L"injector.txt");
+    bool hasProcessName = false;
+    if(processFile.good())
     {
-        if(openFile(pi))
+        std::wstring processName;
+        if (std::getline(processFile, processName))
         {
-            UINT_PTR entry = GetEntryPointOfImage(pi.hProcess);
-            BreakpointEntry(pi.hProcess, entry);
-            InjectOnEntryPoint(pi.dwProcessId, pi.hProcess, entry, dllPath);
-            if(IsWindows2000())
+            if(!processName.empty())
             {
-                KeepDebuggingUntilExit();
+                vector<DWORD> pids = GetPIDs(processName.c_str());
+                if(!pids.empty())
+                {
+                    getCurrentDir();
+                    for (size_t i = 0; i < pids.size(); i++)
+                    {
+                        DWORD pid = pids[i];
+                        wchar_t dllName[] = DLL_NAME;
+                        wchar_t *dllPath = new wchar_t[wcslen(currentDir) + sizeof(dllName) / sizeof(wchar_t)+2];
+                        wcscpy(dllPath, currentDir);
+                        wcscat(dllPath, dllName);
+                        HANDLE hp = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+                        if (hp == 0 || hp == INVALID_HANDLE_VALUE)
+                        {
+                            MessageBoxW(0, L"Failed to inject", L"FAILED", 0);
+                        }
+                        else
+                        {
+                            hasProcessName = true;
+                            InjectDLL_RemoteThread(hp, dllPath);
+                            CloseHandle(hp);
+                        }
+                    }
+                }
+                else
+                {
+                    MessageBoxW(0, (std::wstring(L"Cant find ") + processName).c_str(), L"Error", 0);
+                }
+            }
+        }
+    }
+    if(!hasProcessName)
+    {
+        Tokenize(lpCmdLine, tokens, " ");
+        if(tokens.empty())
+        {
+            if(openFile(pi))
+            {
+                UINT_PTR entry = GetEntryPointOfImage(pi.hProcess);
+                BreakpointEntry(pi.hProcess, entry);
+                InjectOnEntryPoint(pi.dwProcessId, pi.hProcess, entry, dllPath);
+                if(IsWindows2000())
+                {
+                    KeepDebuggingUntilExit();
+                }
+                else
+                {
+                    DebugActiveProcessStop(pi.dwProcessId);
+                }
+                /*ResumeThread(pi.hThread);
+                Sleep(5000);
+                InjectDLL_RemoteThread(pi.hProcess, dllPath);*/
+            
+            }
+            //else
+            //    MessageBoxW(NULL, L"Can't open file", L"ERROR", NULL);
+        }
+        else
+        {
+            string command = Join(tokens, " ");
+            string currentDir = GetDirFromString(command);
+            size_t commandLen = command.length() + 1;
+            size_t currentDirLen = currentDir.length() + 1;
+
+            wchar_t *commandW = new wchar_t[commandLen];
+            wchar_t *currentDirW = currentDir.empty() ? 0 : new wchar_t[currentDirLen];
+
+            if(currentDirW)
+                MultiByteToWideChar(CP_UTF8, 0, currentDir.c_str(), -1, currentDirW, (int)currentDirLen);
+        
+            MultiByteToWideChar(CP_UTF8, 0, command.c_str(), -1, commandW, (int)commandLen);
+
+            BOOL success;
+
+            std::wstring ext;
+
+            if(wcslen(commandW) >= 4)
+            {
+                size_t len = wcslen(commandW);
+                ext = commandW + len - 4;
+                std::transform(ext.begin(), ext.end(), ext.begin(), towupper);
             }
             else
             {
-                DebugActiveProcessStop(pi.dwProcessId);
+                ext = L"";
             }
-            /*ResumeThread(pi.hThread);
-            Sleep(5000);
-            InjectDLL_RemoteThread(pi.hProcess, dllPath);*/
-            
-        }
-        else
-            MessageBoxW(NULL, L"Can't open file", L"ERROR", NULL);
-    }
-    else
-    {
-        string command = Join(tokens, " ");
-        string currentDir = GetDirFromString(command);
-        size_t commandLen = command.length() + 1;
-        size_t currentDirLen = currentDir.length() + 1;
 
-        wchar_t *commandW = new wchar_t[commandLen];
-        wchar_t *currentDirW = currentDir.empty() ? 0 : new wchar_t[currentDirLen];
+            if(ext == L".LNK")
+            {
 
-        if(currentDirW)
-            MultiByteToWideChar(CP_UTF8, 0, currentDir.c_str(), -1, currentDirW, (int)currentDirLen);
-        
-        MultiByteToWideChar(CP_UTF8, 0, command.c_str(), -1, commandW, (int)commandLen);
+                // launch using shortcut method
+                HRESULT hres = 0;
+                IShellLinkW* psl = 0;
 
-        BOOL success;
-
-        std::wstring ext;
-
-        if(wcslen(commandW) >= 4)
-        {
-            size_t len = wcslen(commandW);
-            ext = commandW + len - 4;
-            std::transform(ext.begin(), ext.end(), ext.begin(), towupper);
-        }
-        else
-        {
-            ext = L"";
-        }
-
-        if(ext == L".LNK")
-        {
-
-            // launch using shortcut method
-            HRESULT hres = 0;
-            IShellLinkW* psl = 0;
-
-            // Get a pointer to the IShellLink interface.
-            hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, reinterpret_cast<void**>(&psl));
-
-            if (SUCCEEDED(hres))
-            { 
-
-                IPersistFile* ppf = 0;
-
-                hres = psl->QueryInterface(IID_IPersistFile, reinterpret_cast<void**>(&ppf));
+                // Get a pointer to the IShellLink interface.
+                hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, reinterpret_cast<void**>(&psl));
 
                 if (SUCCEEDED(hres))
                 { 
-                    PROCESS_INFORMATION process;
-                    STARTUPINFO start;
-                    memset(&start,0,sizeof(start));
-                    start.cb = sizeof(start);
 
-                    ppf->Load(commandW, 0);
+                    IPersistFile* ppf = 0;
 
-                    wchar_t fullpath[INFOTIPSIZE];
-                    wchar_t args[INFOTIPSIZE];
-                    wchar_t cwd[INFOTIPSIZE];
-                    psl->GetPath(fullpath, INFOTIPSIZE, 0, SLGP_UNCPRIORITY);
-                    psl->GetArguments(args, INFOTIPSIZE);
-                    psl->GetWorkingDirectory(cwd, INFOTIPSIZE);
+                    hres = psl->QueryInterface(IID_IPersistFile, reinterpret_cast<void**>(&ppf));
 
-                    wchar_t *pcwd = wcslen(cwd) > 0 ? cwd : 0;
-                    std::wstring cmdline = std::wstring(fullpath) + L" " + std::wstring(args);
+                    if (SUCCEEDED(hres))
+                    { 
+                        //PROCESS_INFORMATION process;
+                        STARTUPINFO start;
+                        memset(&start,0,sizeof(start));
+                        start.cb = sizeof(start);
 
-                    success = CreateProcessW(0, (LPWSTR)cmdline.c_str(),0,0,FALSE,DEBUG_ONLY_THIS_PROCESS|IDLE_PRIORITY_CLASS,0,pcwd,&si,&pi);
+                        ppf->Load(commandW, 0);
 
-                    ppf->Release();
-                } 
-                psl->Release();
+                        wchar_t fullpath[INFOTIPSIZE];
+                        wchar_t args[INFOTIPSIZE];
+                        wchar_t cwd[INFOTIPSIZE];
+                        psl->GetPath(fullpath, INFOTIPSIZE, 0, SLGP_UNCPRIORITY);
+                        psl->GetArguments(args, INFOTIPSIZE);
+                        psl->GetWorkingDirectory(cwd, INFOTIPSIZE);
 
-            }
-        }
-        else
-        {
-            success = CreateProcessW(0,commandW,0,0,FALSE,DEBUG_ONLY_THIS_PROCESS|IDLE_PRIORITY_CLASS,0,currentDirW,&si,&pi);
-        }
+                        wchar_t *pcwd = wcslen(cwd) > 0 ? cwd : 0;
+                        std::wstring cmdline = std::wstring(fullpath) + L" " + std::wstring(args);
 
-        delete[] commandW;
-        delete[] currentDirW;
+                        success = CreateProcessW(0, (LPWSTR)cmdline.c_str(),0,0,FALSE,DEBUG_ONLY_THIS_PROCESS|IDLE_PRIORITY_CLASS,0,pcwd,&si,&pi);
 
-        if(success == FALSE)
-        {
-            MessageBoxW(0, L"Failed to create process", L"Error", 0);
-        }
-        else
-        {
-            /*InjectDLL_RemoteThread(pi.hProcess, dllPath);
-            ResumeThread(pi.hThread);*/
+                        ppf->Release();
+                    } 
+                    psl->Release();
 
-            UINT_PTR entry = GetEntryPointOfImage(pi.hProcess);
-            BreakpointEntry(pi.hProcess, entry);
-            InjectOnEntryPoint(pi.dwProcessId, pi.hProcess, entry, dllPath);
-            if(IsWindows2000())
-            {
-                KeepDebuggingUntilExit();
+                }
             }
             else
             {
-                DebugActiveProcessStop(pi.dwProcessId);
+                success = CreateProcessW(0,commandW,0,0,FALSE,DEBUG_ONLY_THIS_PROCESS|IDLE_PRIORITY_CLASS,0,currentDirW,&si,&pi);
+            }
+
+            delete[] commandW;
+            delete[] currentDirW;
+
+            if(success == FALSE)
+            {
+                MessageBoxW(0, L"Failed to create process", L"Error", 0);
+            }
+            else
+            {
+                /*InjectDLL_RemoteThread(pi.hProcess, dllPath);
+                ResumeThread(pi.hThread);*/
+
+                UINT_PTR entry = GetEntryPointOfImage(pi.hProcess);
+                BreakpointEntry(pi.hProcess, entry);
+                InjectOnEntryPoint(pi.dwProcessId, pi.hProcess, entry, dllPath);
+                if(IsWindows2000())
+                {
+                    KeepDebuggingUntilExit();
+                }
+                else
+                {
+                    DebugActiveProcessStop(pi.dwProcessId);
+                }
+
             }
 
         }
-
     }
+
+    
 
     return 0;
 }

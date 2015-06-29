@@ -28,7 +28,11 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+<<<<<<< HEAD
     <PlatformToolset>v120</PlatformToolset>
+=======
+    <PlatformToolset>v120_xp</PlatformToolset>
+>>>>>>> 3605866e26515f05b36ed5dbff6520eb43065a60
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>

@@ -1,12 +1,13 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Public Header", "Public Header", "{91928265-7492-40F7-B042-BB5A53AC6BBD}"
 	ProjectSection(SolutionItems) = preProject
 		include\ext_memoryinterface.h = include\ext_memoryinterface.h
 		include\extensionapi.h = include\extensionapi.h
 		include\pluginapi.h = include\pluginapi.h
-		include\ucdl.h = include\ucdl.h
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AnExtensionFramework", "source\AnExtensionFramework\axf.vcxproj", "{82950C53-F1AE-4F45-A50F-EF16F7888A6F}"
@@ -16,8 +17,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "consolelogger_ext", "source\extension\consolelogger_ext\consolelogger_ext.vcxproj", "{CCA5FBA4-33F6-4B86-9417-F40022E5FAE9}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "memoryext", "source\extension\memoryext\memoryext.vcxproj", "{FBAB8157-B2A9-4AA6-8E6C-C9A52CB0E565}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "underc_ext", "source\extension\underc_ext\underc_ext.vcxproj", "{8AF6B777-69F9-4529-9AD7-59B97388F670}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wingui", "source\extension\wingui\wingui.vcxproj", "{D4A4D332-7D04-43BE-AC8F-9B483E128CFE}"
 EndProject
@@ -30,6 +29,12 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testdll", "source\plugin\testdll\testdll.vcxproj", "{FF5CDD0F-67FA-4B33-B0F1-D57C8283B00B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "angelscript_ext", "source\extension\angelscript_ext\angelscript_ext.vcxproj", "{831E881F-4688-43F1-8EB2-AF7AE59658A8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "python_ext", "source\extension\python_ext\python_ext.vcxproj", "{BAB85E66-37A2-4694-A962-A191E5721B90}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "filelogger_ext", "source\extension\filelogger_ext\filelogger_ext.vcxproj", "{0C5F5A5C-E3EF-4634-9290-C30484AA3F0E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "winconsole_ext", "source\extension\winconsole_ext\winconsole_ext.vcxproj", "{DAA02054-A748-42A3-8878-229E3E5DA00C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -65,12 +70,6 @@ Global
 		{FBAB8157-B2A9-4AA6-8E6C-C9A52CB0E565}.Release|Win32.ActiveCfg = Release|Win32
 		{FBAB8157-B2A9-4AA6-8E6C-C9A52CB0E565}.Release|Win32.Build.0 = Release|Win32
 		{FBAB8157-B2A9-4AA6-8E6C-C9A52CB0E565}.Release|x64.ActiveCfg = Release|Win32
-		{8AF6B777-69F9-4529-9AD7-59B97388F670}.Debug|Win32.ActiveCfg = Debug|Win32
-		{8AF6B777-69F9-4529-9AD7-59B97388F670}.Debug|Win32.Build.0 = Debug|Win32
-		{8AF6B777-69F9-4529-9AD7-59B97388F670}.Debug|x64.ActiveCfg = Debug|Win32
-		{8AF6B777-69F9-4529-9AD7-59B97388F670}.Release|Win32.ActiveCfg = Release|Win32
-		{8AF6B777-69F9-4529-9AD7-59B97388F670}.Release|Win32.Build.0 = Release|Win32
-		{8AF6B777-69F9-4529-9AD7-59B97388F670}.Release|x64.ActiveCfg = Release|Win32
 		{D4A4D332-7D04-43BE-AC8F-9B483E128CFE}.Debug|Win32.ActiveCfg = Debug|Win32
 		{D4A4D332-7D04-43BE-AC8F-9B483E128CFE}.Debug|Win32.Build.0 = Debug|Win32
 		{D4A4D332-7D04-43BE-AC8F-9B483E128CFE}.Debug|x64.ActiveCfg = Debug|Win32
@@ -97,16 +96,36 @@ Global
 		{831E881F-4688-43F1-8EB2-AF7AE59658A8}.Release|Win32.ActiveCfg = Release|Win32
 		{831E881F-4688-43F1-8EB2-AF7AE59658A8}.Release|Win32.Build.0 = Release|Win32
 		{831E881F-4688-43F1-8EB2-AF7AE59658A8}.Release|x64.ActiveCfg = Release|Win32
+		{BAB85E66-37A2-4694-A962-A191E5721B90}.Debug|Win32.ActiveCfg = Debug|Win32
+		{BAB85E66-37A2-4694-A962-A191E5721B90}.Debug|Win32.Build.0 = Debug|Win32
+		{BAB85E66-37A2-4694-A962-A191E5721B90}.Debug|x64.ActiveCfg = Debug|Win32
+		{BAB85E66-37A2-4694-A962-A191E5721B90}.Release|Win32.ActiveCfg = Release|Win32
+		{BAB85E66-37A2-4694-A962-A191E5721B90}.Release|Win32.Build.0 = Release|Win32
+		{BAB85E66-37A2-4694-A962-A191E5721B90}.Release|x64.ActiveCfg = Release|Win32
+		{0C5F5A5C-E3EF-4634-9290-C30484AA3F0E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0C5F5A5C-E3EF-4634-9290-C30484AA3F0E}.Debug|Win32.Build.0 = Debug|Win32
+		{0C5F5A5C-E3EF-4634-9290-C30484AA3F0E}.Debug|x64.ActiveCfg = Debug|Win32
+		{0C5F5A5C-E3EF-4634-9290-C30484AA3F0E}.Release|Win32.ActiveCfg = Release|Win32
+		{0C5F5A5C-E3EF-4634-9290-C30484AA3F0E}.Release|Win32.Build.0 = Release|Win32
+		{0C5F5A5C-E3EF-4634-9290-C30484AA3F0E}.Release|x64.ActiveCfg = Release|Win32
+		{DAA02054-A748-42A3-8878-229E3E5DA00C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DAA02054-A748-42A3-8878-229E3E5DA00C}.Debug|Win32.Build.0 = Debug|Win32
+		{DAA02054-A748-42A3-8878-229E3E5DA00C}.Debug|x64.ActiveCfg = Debug|Win32
+		{DAA02054-A748-42A3-8878-229E3E5DA00C}.Release|Win32.ActiveCfg = Release|Win32
+		{DAA02054-A748-42A3-8878-229E3E5DA00C}.Release|Win32.Build.0 = Release|Win32
+		{DAA02054-A748-42A3-8878-229E3E5DA00C}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{FBAB8157-B2A9-4AA6-8E6C-C9A52CB0E565} = {3921B1FD-4A80-4A51-BEA7-B2B1D793B52E}
-		{8AF6B777-69F9-4529-9AD7-59B97388F670} = {3921B1FD-4A80-4A51-BEA7-B2B1D793B52E}
 		{D4A4D332-7D04-43BE-AC8F-9B483E128CFE} = {3921B1FD-4A80-4A51-BEA7-B2B1D793B52E}
 		{CCA5FBA4-33F6-4B86-9417-F40022E5FAE9} = {3921B1FD-4A80-4A51-BEA7-B2B1D793B52E}
 		{831E881F-4688-43F1-8EB2-AF7AE59658A8} = {3921B1FD-4A80-4A51-BEA7-B2B1D793B52E}
+		{BAB85E66-37A2-4694-A962-A191E5721B90} = {3921B1FD-4A80-4A51-BEA7-B2B1D793B52E}
+		{0C5F5A5C-E3EF-4634-9290-C30484AA3F0E} = {3921B1FD-4A80-4A51-BEA7-B2B1D793B52E}
+		{DAA02054-A748-42A3-8878-229E3E5DA00C} = {3921B1FD-4A80-4A51-BEA7-B2B1D793B52E}
 		{C6C0C008-7DAF-4D53-ADC1-1E67B7E853C6} = {A4E03C93-145C-45C4-B5A4-F1491398DD87}
 		{FF5CDD0F-67FA-4B33-B0F1-D57C8283B00B} = {A4E03C93-145C-45C4-B5A4-F1491398DD87}
 	EndGlobalSection
