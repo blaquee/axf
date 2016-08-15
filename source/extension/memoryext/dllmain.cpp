@@ -32,15 +32,15 @@ static int ReadMemory(const void* target, void* src, unsigned int size)
 
 namespace MemoryInterfaceFactory1
 {
-    static WsExtension Create()
+    static AxfExtension Create()
     {
         MemoryInterface1 *ext = new MemoryInterface1;
         ext->Write = &WriteMemory;
         ext->Read = &ReadMemory;
 
-        return (WsExtension)ext;
+        return (AxfExtension)ext;
     }
-    static void Destroy(WsExtension ext)
+    static void Destroy(AxfExtension ext)
     {
         MemoryInterface1 *deleteme = (MemoryInterface1*)ext;
         delete deleteme;
@@ -48,7 +48,7 @@ namespace MemoryInterfaceFactory1
 }
 
 
-static WsBool OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
+static AxfBool OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
 {
     pi = p;
     ei = e;
@@ -56,6 +56,6 @@ static WsBool OnInitExtension(const struct _PluginInterface *p, const struct _Ex
     ExtensionFactory memExt = { &MemoryInterfaceFactory1::Create, &MemoryInterfaceFactory1::Destroy };
     ei.AddExtension(MEMORY_INTERFACE_1, &memExt);
 
-    return WSTRUE;;
+    return AXFTRUE;;
 }
 

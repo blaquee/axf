@@ -136,7 +136,7 @@ static INT_PTR __stdcall DialogCallback(HWND hwnd, UINT uMsg, WPARAM wparam, LPA
 
                     if(len != LB_ERR && len > 0)
                     {
-                        if(pi.LoadPlugin(buffer) == WSFALSE)
+                        if(pi.LoadPlugin(buffer) == AXFFALSE)
                         {
                             std::string err = "Can't load plugin "; err+=buffer;
                             pi.Log(pi.Error(), err.c_str());
@@ -158,7 +158,7 @@ static INT_PTR __stdcall DialogCallback(HWND hwnd, UINT uMsg, WPARAM wparam, LPA
 
                     if(len != LB_ERR && len > 0)
                     {
-                        if(pi.UnloadPlugin(buffer) == WSFALSE)
+                        if(pi.UnloadPlugin(buffer) == AXFFALSE)
                         {
                             std::string err = "Can't unload plugin "; err+=buffer;
                             pi.Log(pi.Error(), err.c_str());
@@ -171,6 +171,9 @@ static INT_PTR __stdcall DialogCallback(HWND hwnd, UINT uMsg, WPARAM wparam, LPA
             return TRUE;
         case  IDC_REFRESHBUTTON:
             UpdatePluginLists(hwnd);
+            return TRUE;
+        case IDC_EXITBUTTON:
+            TerminateProcess((HANDLE)pi.GetCurrentProcess(), 0);
             return TRUE;
         }
         break;
@@ -189,7 +192,7 @@ static void MsgBoxLogOutput(LogLevel level, const char *s)
     MessageBoxA(gHwndDlg,s,LogLevelToText(level),0);
 }
 
-static WsBool OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
+static AxfBool OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
 {
     pi = p;
     ei = e;
@@ -200,6 +203,6 @@ static WsBool OnInitExtension(const struct _PluginInterface *p, const struct _Ex
     DWORD tid;
     CreateThread(0,0, &DialogThread, 0, 0, &tid);
 
-    return WSTRUE;
+    return AXFTRUE;
 }
 

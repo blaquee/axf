@@ -1,6 +1,7 @@
 #include <io.h>
 #include <fcntl.h>
 #include <iostream>
+#include <stdio.h>
 
 #include "extensionapi.h"
 
@@ -19,9 +20,9 @@ static void OpenConsole()
     coninfo.dwSize.Y = 9999;
     SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), coninfo.dwSize);
 
-    outHandle = _open_osfhandle((long)GetStdHandle(STD_OUTPUT_HANDLE), _O_TEXT);
-    errHandle = _open_osfhandle((long)GetStdHandle(STD_ERROR_HANDLE),_O_TEXT);
-    inHandle = _open_osfhandle((long)GetStdHandle(STD_INPUT_HANDLE),_O_TEXT );
+    outHandle = _open_osfhandle((intptr_t)GetStdHandle(STD_OUTPUT_HANDLE), _O_TEXT);
+    errHandle = _open_osfhandle((intptr_t)GetStdHandle(STD_OUTPUT_HANDLE),_O_TEXT);
+    inHandle = _open_osfhandle((intptr_t)GetStdHandle(STD_OUTPUT_HANDLE),_O_TEXT );
 
     outFile = _fdopen(outHandle, "w" );
     errFile = _fdopen(errHandle, "w");
@@ -35,7 +36,9 @@ static void OpenConsole()
     setvbuf( stderr, NULL, _IONBF, 0 );
     setvbuf( stdin, NULL, _IONBF, 0 );
 
-    std::ios::sync_with_stdio();
+    std::ios::sync_with_stdio(false);
+
+    SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), ENABLE_QUICK_EDIT_MODE|ENABLE_EXTENDED_FLAGS);
 }
 
 static void ConsoleLogOutput(LogLevel level, const char *s)
@@ -51,10 +54,10 @@ static void ConsoleLogOutput(LogLevel level, const char *s)
     else if(level == pi.Warn())
         title = "WARN";
 
-    std::cout << title << ": " << s << std::endl;
+    printf("%s: %s\n", title, s);
 }
 
-static WsBool OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
+static AxfBool OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
 {
     pi = p;
     ei = e;
@@ -65,6 +68,6 @@ static WsBool OnInitExtension(const struct _PluginInterface *p, const struct _Ex
 
     pi.Log(pi.GetAboutMessage());
 
-    return WSTRUE;
+    return AXFTRUE;
 }
 

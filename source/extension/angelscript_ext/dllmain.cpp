@@ -159,7 +159,7 @@ static void *PluginMan_SubscribeEvent(const std::string &event, asIScriptFunctio
 
 //////////////////////////////////////////////////////////////////////////
 
-static void OnUnloadPlugin(WsHandle clientHandle)
+static void OnUnloadPlugin(AxfHandle clientHandle)
 {
     asIScriptModule *mod = (asIScriptModule*)clientHandle;
 
@@ -190,7 +190,7 @@ static void OnLoadPlugin(void *arg)
         if(r < 0)
         {
             //pi.Log(pi.Warn(), std::string(filename) + " failed to compile!");
-            pluginData->initSuccess = WSFALSE;
+            pluginData->initSuccess = AXFFALSE;
             pluginData->clientHandle = 0;
             pluginData->OnPluginUnload = 0;
             return;
@@ -219,15 +219,15 @@ static void OnLoadPlugin(void *arg)
                     // The return value is only valid if the execution finished successfully
                     int axfVersion = (int)ctx->GetReturnDWord();
 
-                    pluginData->initSuccess = WSTRUE;
+                    pluginData->initSuccess = AXFTRUE;
                     pluginData->clientVersion = axfVersion; // required for version compatibility
-                    pluginData->clientHandle = (WsHandle)mod; 
+                    pluginData->clientHandle = (AxfHandle)mod; 
                     pluginData->OnPluginUnload = OnUnloadPlugin; // make the custom plugin unloadable
                 }
                 else
                 {
                     pi.Log(pi.Warn(), std::string(filename) + " failed to execute");
-                    pluginData->initSuccess = WSFALSE;
+                    pluginData->initSuccess = AXFFALSE;
                     pluginData->clientHandle = 0;
                     pluginData->OnPluginUnload = 0;
                 }
@@ -236,7 +236,7 @@ static void OnLoadPlugin(void *arg)
             else
             {
                 pi.Log(pi.Warn(), std::string(filename) + " does not contain the entry point: int main()");
-                pluginData->initSuccess = WSFALSE;
+                pluginData->initSuccess = AXFFALSE;
                 pluginData->clientHandle = 0;
                 pluginData->OnPluginUnload = 0;
                 return;
@@ -245,14 +245,14 @@ static void OnLoadPlugin(void *arg)
     }
 }
 
-static WsBool SetupScriptEngine(asIScriptEngine *engine)
+static AxfBool SetupScriptEngine(asIScriptEngine *engine)
 {
     // Set the message callback to receive information on errors in human readable form.
     int r = engine->SetMessageCallback(asFUNCTION(AngelMessageCallback), 0, asCALL_CDECL);
     if(r < 0)
     {
         engine->Release();
-        return WSFALSE;
+        return AXFFALSE;
     }
 
     // AngelScript doesn't have a built-in string type, as there is no definite standard 
@@ -276,7 +276,7 @@ static WsBool SetupScriptEngine(asIScriptEngine *engine)
     if (pluginInterfaceTypeID < 0)
     {
         engine->Release();
-        return WSFALSE;
+        return AXFFALSE;
     }
 
     const char *voidPointerCls = "ptr";
@@ -284,7 +284,7 @@ static WsBool SetupScriptEngine(asIScriptEngine *engine)
     if (voidPointerTypeID < 0)
     {
         engine->Release();
-        return WSFALSE;
+        return AXFFALSE;
     }
 
     engine->RegisterObjectBehaviour(voidPointerCls, asBEHAVE_CONSTRUCT, "void f()", asFUNCTION( ZeroPtr ), asCALL_CDECL_OBJLAST);
@@ -334,10 +334,10 @@ static WsBool SetupScriptEngine(asIScriptEngine *engine)
     // listen for plugin load events with AXF
     pi.SubscribeEvent(ON_LOAD_PLUGIN, OnLoadPlugin);
 
-    return WSTRUE;
+    return AXFTRUE;
 }
 
-static WsBool OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
+static AxfBool OnInitExtension(const struct _PluginInterface *p, const struct _ExtenderInterface *e)
 {
     pi = p;
     ei = e;
@@ -347,7 +347,7 @@ static WsBool OnInitExtension(const struct _PluginInterface *p, const struct _Ex
 
     if(!scriptEngine)
     {
-        return WSFALSE;
+        return AXFFALSE;
     }
 
     if(SetupScriptEngine(scriptEngine))
@@ -356,11 +356,11 @@ static WsBool OnInitExtension(const struct _PluginInterface *p, const struct _Ex
         ss << "Loaded Angelscript Engine version: " << asGetLibraryVersion();
         pi.Log(pi.Info(), ss.str());
 
-        return WSTRUE;
+        return AXFTRUE;
     }
     else
     {
-        return WSFALSE;
+        return AXFFALSE;
     }
 }
 

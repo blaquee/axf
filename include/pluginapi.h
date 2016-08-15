@@ -44,6 +44,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <algorithm>
 #include <exception>
+#include <stdexcept>
+#include <memory>
 #endif
 
 
@@ -62,7 +64,7 @@ Each segment ranges from 0 to 255.
 if one of the segment increases, all the segments below it must be reset to 0
 for example an increase to minor version done like this: 1.0.50 becomes 1.1.0
 
-major = Will only be increased if there are major changes to the system that will 
+major = Will only be increased if there are major changes to the system that will
 render all existing plugins completely unusable (a plugin rewrite is unavoidable).
 At the moment, increasing the major version is reserved for a complete codebase rewrite (which I hope will never happen).
 
@@ -73,7 +75,7 @@ service = Bug fixes or enhancements to the system, no API changes and will not r
 */
 
 #define AXF_API_MAJOR_VERSION 1
-#define AXF_API_MINOR_VERSION 0
+#define AXF_API_MINOR_VERSION 1
 #define AXF_API_SERVICE_VERSION 0
 
 #define AXF_VERSION_MAJOR_MASK 16
@@ -97,13 +99,13 @@ service = Bug fixes or enhancements to the system, no API changes and will not r
 /************************************************************************/
 /* Primitive Data Types                                                 */
 /************************************************************************/
-struct WsHandle__{int unused;}; 
-typedef struct WsHandle__ *WsHandle;
-typedef int WsBool;
-typedef unsigned int ProtectionMode;
+struct AxfHandle__{int unused;};
+typedef struct AxfHandle__ *AxfHandle;
+typedef int AxfBool;
+typedef AxfHandle AxfExtension;
 
-typedef const WsHandle LogLevel;
-typedef WsHandle WsExtension;
+typedef unsigned int ProtectionMode;
+typedef const AxfHandle LogLevel;
 
 /************************************************************************/
 /* Plugin Description and Events                                        */
@@ -115,7 +117,7 @@ typedef WsHandle WsExtension;
     #ifdef __cplusplus
         #define AXF_EXPORT extern "C" __declspec(dllexport)
     #else
-        #define AXF_EXPORT __declspec(dllexport) 
+        #define AXF_EXPORT __declspec(dllexport)
     #endif
 #else
     #undef AXF_EXPORT
@@ -127,13 +129,13 @@ typedef struct _PluginDescription
     unsigned int version;  /* the version of this plugin */
     unsigned int pluginapiVersion; /* the version of the pluginapi this plugin is using, must be AXF_API_VERSION (was AXF_PLUGIN_VERSION) */
 
-    /* entry point, cdecl only, return WSTRUE for success, otherwise return WSFALSE*/
-    WsBool (*OnInit)(const struct _PluginInterface*);  
+    /* entry point, cdecl only, return AXFTRUE for success, otherwise return AXFFALSE*/
+    AxfBool (*OnInit)(const struct _PluginInterface*);
 
-    /* optional info */ 
+    /* optional info */
     const char *name;
-    const char *author; 
-    const char *about;  
+    const char *author;
+    const char *about;
 
     void *reserved0; /* must be NULL */
     void *reserved1; /* must be NULL */
@@ -159,17 +161,17 @@ typedef struct _PluginDescription
 /* The following functions must be implemented with C (__cdecl) calling convention */
 
 /* called when the plugin gets loaded
- the plugin cannot be loaded if this function isn't implemented 
+ the plugin cannot be loaded if this function isn't implemented
 
- return WSTRUE for success, otherwise return WSFALSE
+ return AXFTRUE for success, otherwise return AXFFALSE
  */
-static WsBool OnInit(const struct _PluginInterface *);
+static AxfBool OnInit(const struct _PluginInterface *);
 
 
 /* These functions may be added to the event manager via the EventInterface */
 
 /* called when the plugin gets unloaded
-   the plugin cannot be unloaded if this function isn't implemented 
+   the plugin cannot be unloaded if this function isn't implemented
    to be used with ON_FINALIZE_EVENT
 */
 static void OnFinalize(void *unused);
@@ -188,21 +190,21 @@ typedef void (*EventFunction)(void*);
 /* Constants                                                            */
 /************************************************************************/
 
-enum {WSFALSE=0, WSTRUE=1};
+enum {AXFFALSE=0, AXFTRUE=1};
 
-enum 
-{ 
-    PROTECTION_MODE_NOACCESS = 0x1,               
-    PROTECTION_MODE_READONLY = 0x2,               
-    PROTECTION_MODE_READWRITE = 0x4,              
-    PROTECTION_MODE_WRITECOPY = 0x8,              
-    PROTECTION_MODE_EXECUTE = 0x10,                
-    PROTECTION_MODE_EXECUTE_READ = 0x20,           
-    PROTECTION_MODE_EXECUTE_READWRITE = 0x40,      
-    PROTECTION_MODE_EXECUTE_WRITECOPY = 0x80,      
-    PROTECTION_MODE_GUARD = 0x100,                 
-    PROTECTION_MODE_NOCACHE = 0x200,               
-    PROTECTION_MODE_WRITECOMBINE = 0x400             
+enum
+{
+    PROTECTION_MODE_NOACCESS = 0x1,
+    PROTECTION_MODE_READONLY = 0x2,
+    PROTECTION_MODE_READWRITE = 0x4,
+    PROTECTION_MODE_WRITECOPY = 0x8,
+    PROTECTION_MODE_EXECUTE = 0x10,
+    PROTECTION_MODE_EXECUTE_READ = 0x20,
+    PROTECTION_MODE_EXECUTE_READWRITE = 0x40,
+    PROTECTION_MODE_EXECUTE_WRITECOPY = 0x80,
+    PROTECTION_MODE_GUARD = 0x100,
+    PROTECTION_MODE_NOCACHE = 0x200,
+    PROTECTION_MODE_WRITECOMBINE = 0x400
 };
 
 /************************************************************************/
@@ -321,7 +323,7 @@ typedef struct _SystemInterface
 
     const char* (*GetAboutMessage)(void);
     unsigned int (*GetVersion)(void);
-    
+
     /* Pass NULL to these functions to return the required size of the string */
     size_t (*GetBaseDirectory)(String*);
     size_t (*GetPluginDirectory)(String*);
@@ -335,37 +337,40 @@ typedef struct _LoggingInterface
     LogLevel Debug;
     LogLevel Warn;
     LogLevel Error;
-    
+
 
     void (*SetLogLevel)(const struct _PluginInterface*, const LogLevel type);
     LogLevel (*GetLogLevel)(const struct _PluginInterface*);
     void (*Log)(const struct _PluginInterface*, const char *s);
     void (*Log2)(const struct _PluginInterface*, const LogLevel type, const char *s);
+    void(*LogBinaryData)(const struct _PluginInterface*, const char *title, unsigned char *buf, int len);
 } LoggingInterface;
 
 typedef struct _PluginManagerInterface
 {
     size_t (*GetUnloadedPluginList)(String *strs, size_t sizeofStrs);
     size_t (*GetLoadedPluginList)(String *strs, size_t sizeofStrs);
-    WsBool (*Load)(const char* fileName);
-    WsBool (*Unload)(const char *fileName);
-    WsBool (*Reload)(const char *fileName);
+    AxfBool (*Load)(const char* fileName);
+    AxfBool (*Unload)(const char *fileName);
+    AxfBool (*Reload)(const char *fileName);
+    AxfBool (*UnloadSelf)(const struct _PluginInterface*);
+    AxfBool (*ReloadSelf)(const struct _PluginInterface*);
 } PluginManagerInterface;
 
 typedef struct _EventInterface
 {
     size_t (*GetEventList)(String *strs, size_t sizeofStrs);
-    WsBool (*IsEventAvailable)(const char *eventName);
+    AxfBool (*IsEventAvailable)(const char *eventName);
 
     /* all event functions are __cdecl call convention */
     /* returns NULL handle on failure */
-    WsHandle (*SubscribeEvent)(const struct _PluginInterface*, const char *eventName, EventFunction eventFunc);
+    AxfHandle (*SubscribeEvent)(const struct _PluginInterface*, const char *eventName, EventFunction eventFunc);
 
-    /* You do not have to manually remove the event in OnUnload(), 
+    /* You do not have to manually remove the event in OnUnload(),
        the plugin manager will take care of cleaning up events */
-    void (*UnsubscribeEvent)(const struct _PluginInterface*, WsHandle handle);
+    void (*UnsubscribeEvent)(const struct _PluginInterface*, AxfHandle handle);
 
-    WsBool (*IsEventSubscribed)(const struct _PluginInterface*, WsHandle handle);
+    AxfBool (*IsEventSubscribed)(const struct _PluginInterface*, AxfHandle handle);
 } EventInterface;
 
 typedef struct _HookInterface
@@ -373,13 +378,19 @@ typedef struct _HookInterface
     /*
         Sometime the hook may fail even though a valid handle (non-null) is returned
         Be sure to check that your hook works
-        
+
         Any hooked functions will get unhooked after OnUnload() has been called
     */
-    WsHandle (*HookFunction)(const struct _PluginInterface*, void *oldAddress, void *newAddress);
-    WsBool (*UnhookFunction)(const struct _PluginInterface*, WsHandle handle);
-    WsBool (*IsHooked)(void *oldAddress);
-    void *(*GetOriginalFunction)(WsHandle);
+    AxfHandle (*HookFunction)(const struct _PluginInterface*, void *oldAddress, void *newAddress);
+    AxfBool (*UnhookFunction)(const struct _PluginInterface*, AxfHandle handle);
+    AxfBool (*IsHooked)(void *oldAddress);
+    void *(*GetOriginalFunction)(AxfHandle);
+
+    /* breakpoints */
+    void(*SetBreakpointFunc)(const struct _PluginInterface*, AxfHandle threadId, unsigned int bpSlot, void *func, void *handler);
+    void(*SetBreakpointVar) (const struct _PluginInterface*, AxfHandle threadId, unsigned int bpSlot, AxfBool read, AxfBool write, int size, void *varAddr, EventFunction handler, void *userdata);
+    void(*ResetBreakpoint)(const struct _PluginInterface*);
+    void(*DeleteBreakpoint)(const struct _PluginInterface*, AxfHandle threadId, unsigned int bpSlot);
 } HookInterface;
 
 typedef struct _MemoryInterface
@@ -388,24 +399,24 @@ typedef struct _MemoryInterface
         Passing a statically allocated memory address located in a module (EXE/DLL) will return the ImageBase address
         Passing a dynamically allocated memory address will return its memory block base address
 
-        returns WSFALSE if the function fails
+        returns AXFFALSE if the function fails
     */
-    WsBool (*GetAllocationBase)(AllocationInfo *allocInfo, void*);
+    AxfBool (*GetAllocationBase)(AllocationInfo *allocInfo, void*);
 
     /*
         ProtectionMode:
-            PROTECTION_MODE_EXECUTE 
-            PROTECTION_MODE_NOACCESS                
-            PROTECTION_MODE_READONLY                
-            PROTECTION_MODE_READWRITE               
-            PROTECTION_MODE_WRITECOPY               
-            PROTECTION_MODE_EXECUTE                 
-            PROTECTION_MODE_EXECUTE_READ            
-            PROTECTION_MODE_EXECUTE_READWRITE      
-            PROTECTION_MODE_EXECUTE_WRITECOPY       
-            PROTECTION_MODE_GUARD                  
-            PROTECTION_MODE_NOCACHE             
-            PROTECTION_MODE_WRITECOMBINE              
+            PROTECTION_MODE_EXECUTE
+            PROTECTION_MODE_NOACCESS
+            PROTECTION_MODE_READONLY
+            PROTECTION_MODE_READWRITE
+            PROTECTION_MODE_WRITECOPY
+            PROTECTION_MODE_EXECUTE
+            PROTECTION_MODE_EXECUTE_READ
+            PROTECTION_MODE_EXECUTE_READWRITE
+            PROTECTION_MODE_EXECUTE_WRITECOPY
+            PROTECTION_MODE_GUARD
+            PROTECTION_MODE_NOCACHE
+            PROTECTION_MODE_WRITECOMBINE
 
         Returns the old protection mode,
         Returns PROTECTION_MODE_NOACCESS if the function fails
@@ -426,7 +437,7 @@ typedef struct _MemoryInterface
                     "3F 03 00 B9 FC ?? AB ?? ?? ?? ?? EF";
 
         // you can also use irregular spacing, mixed with tabs
-        char *sig = "1F      01 00 B9 FA ??     AB ?? ?? ?? ?? EF" 
+        char *sig = "1F      01 00 B9 FA ??     AB ?? ?? ?? ?? EF"
                     "2F 02 00 B9 FB ?? AB ?? ??     ?? ?? EF"
                     "3F 03 00 B9 FC ?? AB               ?? ?? ?? ?? EF";
 
@@ -438,8 +449,8 @@ typedef struct _MemoryInterface
 /* for accessing specialized extensions specific to certain applications or games*/
 typedef struct _ExtensionInterface
 {
-    /* Extensions are named using the $EXTENSION_$VERSION string format 
-       where $EXTENSION is the extension name, 
+    /* Extensions are named using the $EXTENSION_$VERSION string format
+       where $EXTENSION is the extension name,
        followed by underscore and $VERSION is the version number (starting from 1, up to infinity)
 
        For example: HookInterface_1
@@ -447,10 +458,22 @@ typedef struct _ExtensionInterface
        Any unreleased extensions will get released after OnUnload() has been called
     */
     size_t (*GetExtensionList)(String *strs, size_t sizeofStrs);
-    WsBool (*IsExtensionAvailable)(const char *name);
-    WsExtension (*GetExtension)(const struct _PluginInterface*, const char *name);
-    WsBool (*ReleaseExtension)(const struct _PluginInterface*, WsExtension ext);
+    AxfBool (*IsExtensionAvailable)(const char *name);
+    AxfExtension (*GetExtension)(const struct _PluginInterface*, const char *name);
+    AxfBool (*ReleaseExtension)(const struct _PluginInterface*, AxfExtension ext);
 } ExtensionInterface;
+
+typedef struct _ThreadInterface
+{
+    AxfHandle(*GetCurrentThread)(void);
+    AxfHandle(*GetCurrentThreadId)(void);
+    AxfHandle(*OpenThread)(const struct _PluginInterface*, AxfHandle threadId);
+    void(*CloseThread)(const struct _PluginInterface*, AxfHandle threadHandle);
+    void(*EnumerateThreads)(void(*callback)(AxfHandle threadId, AxfHandle ownerProcessId));
+    AxfHandle(*GetCurrentProcess)(void);
+    AxfHandle(*GetCurrentProcessId)(void);
+    void(*EnumerateProcesses)(void(*callback)(AxfHandle processId));
+} ThreadInterface;
 
 typedef struct _PluginInterface
 {
@@ -463,6 +486,7 @@ typedef struct _PluginInterface
     const ExtensionInterface * const extension;
     const HookInterface * const hook;
     const MemoryInterface * const memory;
+    const ThreadInterface * const thread;
 
 } PluginInterface;
 
@@ -498,17 +522,17 @@ public:
     InterfaceEx(const PluginInterface *pi) : pi(pi) {}
     virtual ~InterfaceEx() {}
 
-    const PluginInterface &GetPluginInterface() const 
-    { 
+    const PluginInterface &GetPluginInterface() const
+    {
         ThrowIfNotInitialized();
 
-        return *pi; 
+        return *pi;
     }
-    const PluginInterface *GetPluginInterfacePtr() const 
-    { 
+    const PluginInterface *GetPluginInterfacePtr() const
+    {
         ThrowIfNotInitialized();
 
-        return pi; 
+        return pi;
     }
 
     void SetPluginInterface(const PluginInterface *pi)
@@ -516,7 +540,7 @@ public:
         this->pi = pi;
     }
 
-    operator const PluginInterface*() const 
+    operator const PluginInterface*() const
     {
         ThrowIfNotInitialized();
 
@@ -532,7 +556,7 @@ public:
 };
 class SystemInterfaceEx : public virtual InterfaceEx
 {
-    std::string GetDirectory(size_t(*GetDirFunc)(String*)) const 
+    std::string GetDirectory(size_t(*GetDirFunc)(String*)) const
     {
         size_t len = GetDirFunc(0);
         String *s = AllocString(len, 1);
@@ -563,6 +587,10 @@ public:
     {
         return GetPluginInterface().system->GetModuleBase(name.c_str());
     }
+    void *GetModuleBase(const char *name) const
+    {
+        return GetPluginInterface().system->GetModuleBase(name);
+    }
     void *GetProcAddress(void *base, const std::string &name) const
     {
         return GetPluginInterface().system->GetProcAddress(base, name.c_str());
@@ -587,7 +615,7 @@ public:
     std::string  GetBaseDirectory() const
     {
         return GetDirectory(GetPluginInterface().system->GetBaseDirectory);
-        
+
     }
     std::string  GetPluginDirectory() const
     {
@@ -639,9 +667,18 @@ public:
     {
         GetPluginInterface().log->Log(GetPluginInterfacePtr(), s.c_str());
     }
+    void Log(const char *s) const
+    {
+        if (!s) return;
+        GetPluginInterface().log->Log(GetPluginInterfacePtr(), s);
+    }
     void Log(const LogLevel type, const std::string &s) const
     {
         GetPluginInterface().log->Log2(GetPluginInterfacePtr(), type, s.c_str());
+    }
+    void LogBinaryData(const std::string &title, unsigned char *buf, int len)
+    {
+        GetPluginInterface().log->LogBinaryData(GetPluginInterfacePtr(), title.c_str(), buf, len);
     }
 };
 
@@ -677,23 +714,31 @@ public:
         return GetPluginList(GetPluginInterface().manager->GetLoadedPluginList);
     }
 
-    WsBool LoadPlugin(const std::string &fileName) const
+    AxfBool LoadPlugin(const std::string &fileName) const
     {
         return GetPluginInterface().manager->Load(fileName.c_str());
     }
-    WsBool UnloadPlugin(const std::string &fileName) const
+    AxfBool UnloadPlugin(const std::string &fileName) const
     {
         return GetPluginInterface().manager->Unload(fileName.c_str());
     }
-    WsBool ReloadPlugin(const std::string &fileName) const
+    AxfBool ReloadPlugin(const std::string &fileName) const
     {
         return GetPluginInterface().manager->Reload(fileName.c_str());
+    }
+    AxfBool UnloadSelf()
+    {
+        return GetPluginInterface().manager->UnloadSelf(GetPluginInterfacePtr());
+    }
+    AxfBool ReloadSelf()
+    {
+        return GetPluginInterface().manager->ReloadSelf(GetPluginInterfacePtr());
     }
 };
 
 class EventInterfaceEx : public virtual InterfaceEx
 {
-    
+
 public:
     EventInterfaceEx(){}
     EventInterfaceEx(const PluginInterface *pi) : InterfaceEx(pi) {}
@@ -713,26 +758,26 @@ public:
 
         return results;
     }
-    WsBool IsEventAvailable(const std::string &eventName) const
+    AxfBool IsEventAvailable(const std::string &eventName) const
     {
         return GetPluginInterface().event->IsEventAvailable(eventName.c_str());
     }
 
     /* all event functions are __cdecl call convention */
     /* returns NULL handle on failure */
-    WsHandle SubscribeEvent(const std::string &eventName, EventFunction eventFunc) const
+    AxfHandle SubscribeEvent(const std::string &eventName, EventFunction eventFunc) const
     {
         return GetPluginInterface().event->SubscribeEvent(GetPluginInterfacePtr(), eventName.c_str(), eventFunc);
     }
 
-    /* You do not have to manually remove the event in OnUnload(), 
+    /* You do not have to manually remove the event in OnUnload(),
        the plugin manager will take care of cleaning up events */
-    void UnsubscribeEvent(WsHandle handle) const
+    void UnsubscribeEvent(AxfHandle handle) const
     {
         GetPluginInterface().event->UnsubscribeEvent(GetPluginInterfacePtr(), handle);
     }
 
-    WsBool IsEventSubscribed(WsHandle handle) const
+    AxfBool IsEventSubscribed(AxfHandle handle) const
     {
         return GetPluginInterface().event->IsEventSubscribed(GetPluginInterfacePtr(), handle);
     }
@@ -745,21 +790,38 @@ public:
     HookInterfaceEx(const PluginInterface *pi) : InterfaceEx(pi) {}
     virtual ~HookInterfaceEx(){}
 
-    WsHandle HookFunction(void *oldAddress, void *newAddress) const
+    AxfHandle HookFunction(void *oldAddress, void *newAddress) const
     {
         return GetPluginInterface().hook->HookFunction(GetPluginInterfacePtr(), oldAddress, newAddress);
     }
-    WsBool UnhookFunction(WsHandle handle) const
+    AxfBool UnhookFunction(AxfHandle handle) const
     {
         return GetPluginInterface().hook->UnhookFunction(GetPluginInterfacePtr(), handle);
     }
-    WsBool IsHooked(void *oldAddress) const
+    AxfBool IsHooked(void *oldAddress) const
     {
         return GetPluginInterface().hook->IsHooked(oldAddress);
     }
-    void *GetOriginalFunction(WsHandle handle) const
+    void *GetOriginalFunction(AxfHandle handle) const
     {
         return GetPluginInterface().hook->GetOriginalFunction(handle);
+    }
+
+    void SetBreakpointFunc(AxfHandle threadId, unsigned int bpSlot, void *func, void *handler)
+    {
+        GetPluginInterface().hook->SetBreakpointFunc(GetPluginInterfacePtr(), threadId, bpSlot, func, handler);
+    }
+    void SetBreakpointVar(AxfHandle threadId, unsigned int bpSlot, AxfBool read, AxfBool write, int size, void *varAddr, EventFunction handler, void *userdata=0)
+    {
+        GetPluginInterface().hook->SetBreakpointVar(GetPluginInterfacePtr(), threadId, bpSlot, read, write, size, varAddr, handler, userdata);
+    }
+    void ResetBreakpoint()
+    {
+        GetPluginInterface().hook->ResetBreakpoint(GetPluginInterfacePtr());
+    }
+    void DeleteBreakpoint(AxfHandle threadId, unsigned int bpSlot)
+    {
+        GetPluginInterface().hook->DeleteBreakpoint(GetPluginInterfacePtr(), threadId, bpSlot);
     }
 };
 
@@ -773,7 +835,7 @@ public:
     std::unique_ptr<AllocationInfo> GetAllocationBase(void *addr) const
     {
         std::unique_ptr<AllocationInfo> allocInfo(new AllocationInfo);
-        WsBool isgood = GetPluginInterface().memory->GetAllocationBase(allocInfo.get(), addr);
+        AxfBool isgood = GetPluginInterface().memory->GetAllocationBase(allocInfo.get(), addr);
         if(isgood)
         {
             return allocInfo;
@@ -804,7 +866,7 @@ public:
                     "3F 03 00 B9 FC ?? AB ?? ?? ?? ?? EF";
 
         // you can also use irregular spacing, mixed with tabs
-        char *sig = "1F      01 00 B9 FA ??     AB ?? ?? ?? ?? EF" 
+        char *sig = "1F      01 00 B9 FA ??     AB ?? ?? ?? ?? EF"
                     "2F 02 00 B9 FB ?? AB ?? ??     ?? ?? EF"
                     "3F 03 00 B9 FC ?? AB               ?? ?? ?? ?? EF";
 
@@ -838,7 +900,7 @@ public:
         return results;
     }
 
-    WsBool IsExtensionAvailable(const std::string &extName) const
+    AxfBool IsExtensionAvailable(const std::string &extName) const
     {
         return GetPluginInterface().extension->IsExtensionAvailable(extName.c_str());
     }
@@ -848,38 +910,82 @@ public:
         return (T*)GetPluginInterface().extension->GetExtension(GetPluginInterfacePtr(), extName.c_str());
     }
 
-    WsExtension GetExtension(const std::string &extName) const
+    AxfExtension GetExtension(const std::string &extName) const
     {
         return GetPluginInterface().extension->GetExtension(GetPluginInterfacePtr(), extName.c_str());
     }
 
-    WsBool ReleaseExtension(WsExtension ext) const
+    AxfBool ReleaseExtension(AxfExtension ext) const
     {
         return GetPluginInterface().extension->ReleaseExtension(GetPluginInterfacePtr(), ext);
     }
 };
 
+class ThreadInterfaceEx : public virtual InterfaceEx
+{
+public:
+    ThreadInterfaceEx(){}
+    ThreadInterfaceEx(const PluginInterface *pi) : InterfaceEx(pi) {}
+    virtual ~ThreadInterfaceEx(){}
+
+
+    AxfHandle GetCurrentThread(void)
+    {
+        return GetPluginInterface().thread->GetCurrentThread();
+    }
+    AxfHandle GetCurrentThreadId(void)
+    {
+        return GetPluginInterface().thread->GetCurrentThreadId();
+    }
+    AxfHandle OpenThread(AxfHandle threadId)
+    {
+        return GetPluginInterface().thread->OpenThread(GetPluginInterfacePtr(), threadId);
+    }
+    void CloseThread(AxfHandle threadHandle)
+    {
+        GetPluginInterface().thread->CloseThread(GetPluginInterfacePtr(), threadHandle);
+    }
+    void EnumerateThreads(void(*callback)(AxfHandle threadId, AxfHandle ownerProcessId))
+    {
+        GetPluginInterface().thread->EnumerateThreads(callback);
+    }
+    AxfHandle GetCurrentProcess(void)
+    {
+        return GetPluginInterface().thread->GetCurrentProcess();
+    }
+    AxfHandle GetCurrentProcessId(void)
+    {
+        return GetPluginInterface().thread->GetCurrentProcessId();
+    }
+    void EnumerateProcesses(void(*callback)(AxfHandle processId))
+    {
+        GetPluginInterface().thread->EnumerateProcesses(callback);
+    }
+};
+
 class PluginInterfaceEx : public virtual InterfaceEx,
-                          public EventInterfaceEx, 
+                          public EventInterfaceEx,
                           public LoggingInterfaceEx,
-                          public PluginManagerInterfaceEx, 
+                          public PluginManagerInterfaceEx,
                           public SystemInterfaceEx,
                           public ExtensionInterfaceEx,
                           public HookInterfaceEx,
-                          public MemoryInterfaceEx
+                          public MemoryInterfaceEx,
+                          public ThreadInterfaceEx
 {
 public:
     PluginInterfaceEx(){}
 
-    PluginInterfaceEx(const PluginInterface *pi) : 
-        InterfaceEx(pi), 
+    PluginInterfaceEx(const PluginInterface *pi) :
+        InterfaceEx(pi),
         EventInterfaceEx(pi),
         LoggingInterfaceEx(pi),
         PluginManagerInterfaceEx(pi),
         SystemInterfaceEx(pi),
         ExtensionInterfaceEx(pi),
         HookInterfaceEx(pi),
-        MemoryInterfaceEx(pi)
+        MemoryInterfaceEx(pi),
+        ThreadInterfaceEx(pi)
         {}
 
     PluginInterfaceEx &operator=(const PluginInterface *pi)

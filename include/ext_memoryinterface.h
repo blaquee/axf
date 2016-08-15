@@ -34,9 +34,9 @@ public:
     MemoryInterfaceEx1(MemoryInterface1 *ext) : ext(ext)
     {
     }
-    operator WsExtension()
+    operator AxfExtension()
     {
-        return (WsExtension)ext;
+        return (AxfExtension)ext;
     }
     int Write(void *target, const void *src, unsigned int size) const
     {
@@ -49,13 +49,13 @@ public:
 
     // templated version
     template<typename T>
-    int Write(T *target, const T *src) const
+    int Write(void *target, const T *src) const
     {
         return ext->Write(target, src, sizeof(T));
     }
 
     template<typename T>
-    int Read(const T *target, T *src) const
+    int Read(const void *target, T *src) const
     {
         return ext->Read(target, src, sizeof(T));
     }

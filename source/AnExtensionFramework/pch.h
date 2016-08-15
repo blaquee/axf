@@ -25,6 +25,7 @@
 #include <utility>
 #include <set>
 #include <map>
+#include <unordered_map>
 //string safe functions
 #include <tchar.h>
 #include <strsafe.h>

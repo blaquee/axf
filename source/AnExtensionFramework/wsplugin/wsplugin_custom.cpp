@@ -12,7 +12,7 @@ using namespace std;
 // private implementations
 
 static const int PLUGINDATA_MAX_FILE_SIZE = 1024*1024*100; // cap it to 100MB
-static WsBool PluginData_GetBinary(struct _PluginData *data, PluginBinary *outbin)
+static AxfBool PluginData_GetBinary(struct _PluginData *data, PluginBinary *outbin)
 {
     std::string path = PluginManager::inst().GetPluginDirectory() + data->name;
     std::ifstream file(path, std::ios_base::binary | std::ios_base::in);
@@ -30,16 +30,16 @@ static WsBool PluginData_GetBinary(struct _PluginData *data, PluginBinary *outbi
             if(file.read((char*)outbin->data, outbin->size))
             {
                 filebuf[result] = 0; // null terminate it
-                return WSTRUE;
+                return AXFTRUE;
             }
             else
             {
                 delete[] outbin->data;
-                return WSFALSE;
+                return AXFFALSE;
             }
         }
     }
-    return WSFALSE;
+    return AXFFALSE;
 }
 
 static void PluginData_ReleaseBinary(PluginBinary *bin)
@@ -77,7 +77,7 @@ int CustomPlugin::Load()
     return AXF_VERSION;
 }
 
-WsBool CustomPlugin::OnInit()
+AxfBool CustomPlugin::OnInit()
 {
     PluginData pluginData;
     pluginData.clientVersion = 0;
@@ -93,15 +93,15 @@ WsBool CustomPlugin::OnInit()
     try 
     {
         PluginManager::inst().FireEventStopIf(ON_LOAD_PLUGIN, pluginData, StopOnClientHandleValid());
-        if(pluginData.initSuccess == WSFALSE)
+        if(pluginData.initSuccess == AXFFALSE)
         {
-            return WSFALSE;
+            return AXFFALSE;
         }
         if(pluginData.clientHandle)
         {
             clientHandle = pluginData.clientHandle;
             OnPluginUnload = pluginData.OnPluginUnload;
-            return WSTRUE;
+            return AXFTRUE;
         }
         else
         {
@@ -117,7 +117,7 @@ WsBool CustomPlugin::OnInit()
         throw WSException(std::string("Failed to custom load plugin: ") + GetFileName());
     }
 
-    return WSFALSE;
+    return AXFFALSE;
 }
 
 void CustomPlugin::Unload()

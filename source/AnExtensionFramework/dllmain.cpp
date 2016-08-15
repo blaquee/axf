@@ -23,6 +23,7 @@ static void InitExtensions()
     std::ifstream configFile(CONFIG_FILEPATH);
     if(configFile.is_open())
     {
+        // load extensions
         try
         {
             json::Object doc;
@@ -42,12 +43,33 @@ static void InitExtensions()
                     MessageBoxA(0, ex.what(), "ExtInit Error", 0);
                 }
             }
+
+            // autorun dll if possible
+            try
+            {
+                json::Array autoruns = doc["autoruns"];
+                for (json::Array::const_iterator it = autoruns.Begin(); it != autoruns.End(); ++it)
+                {
+                    try
+                    {
+                        json::String dllName = *it;
+                        PluginManager::inst().LoadPlugin(dllName);
+                    }
+                    catch (const std::exception &ex)
+                    {
+                        MessageBoxA(0, ex.what(), "Autorun init error", 0);
+                    }
+                }
+            }
+            catch (const json::Exception &)
+            {
+                // eat up exception
+            }
         }
         catch(const std::exception &ex)
         {
             MessageBoxA(0, ex.what(), "ExtInit Error", 0);
         }
-        
     }
     else
     {
