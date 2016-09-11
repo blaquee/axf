@@ -76,12 +76,9 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <OmitFramePointers>true</OmitFramePointers>
-<<<<<<< HEAD
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-=======
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
->>>>>>> 3605866e26515f05b36ed5dbff6520eb43065a60
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

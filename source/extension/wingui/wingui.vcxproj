@@ -27,11 +27,7 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-<<<<<<< HEAD
     <PlatformToolset>v120</PlatformToolset>
-=======
-    <PlatformToolset>v120_xp</PlatformToolset>
->>>>>>> 3605866e26515f05b36ed5dbff6520eb43065a60
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
